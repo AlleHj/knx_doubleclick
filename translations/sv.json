@@ -1,0 +1,42 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "KNX Dubbelklicksdetektor: Ny Lyssnare",
+        "description": "Konfigurera en ny lyssnare för KNX dubbelklick. Ett unikt namnsuffix hjälper dig att identifiera denna instans och dess entiteter. Åtgärder konfigureras i en separat YAML-fil som skapas automatiskt i mappen 'config/knx_doubleclick_actions/'.",
+        "data": {
+          "name_suffix": "Unikt Namnsuffix (t.ex. 'Vardagsrum Tak', blir del av entitets-ID)",
+          "knx_group_address": "KNX Gruppadress att lyssna på (t.ex. 1/1/1)",
+          "knx_value": "KNX Värde att reagera på (t.ex. 1 för påslag)",
+          "double_click_window_seconds": "Tidsfönster för dubbelklick (t.ex. 0.7 i sekunder)"
+        }
+      }
+    },
+    "error": {
+      "unknown": "Oväntat fel inträffade."
+    },
+    "abort": {
+      "already_configured": "En enhet med denna unika identifierare är redan konfigurerad."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "KNX Dubbelklicksdetektor: Ändra Inställningar",
+        "description": "Justera inställningarna för **{config_entry_name}**.\nÅtgärder för denna instans redigeras i YAML-editorn nedan och sparas till filen: {actions_file_path}.\nDen initiala filen skapas med en uppsättning exempel. Om filen tas bort externt, kommer den återskapas med standardexempel nästa gång denna dialog öppnas.",
+        "data": {
+          "knx_group_address": "KNX Gruppadress att lyssna på",
+          "knx_value": "KNX Värde att reagera på",
+          "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)",
+          "actions_yaml_editor_content": "Åtgärder (YAML - redigerar den associerade filen)"
+        }
+      }
+    },
+    "error": {
+        "unknown_option_error": "Ett okänt fel uppstod vid hantering av optioner.",
+        "cannot_read_actions_file": "Kunde inte läsa åtgärdsfilen. En ny fil med standardexempel kan ha skapats/använts. Kontrollera loggarna och filrättigheter.",
+        "cannot_write_actions_file": "Kunde inte spara ändringar till åtgärdsfilen. Kontrollera loggarna och filrättigheter.",
+        "invalid_actions_yaml_in_editor": "YAML-koden för åtgärder i editorn är ogiltig. Korrigera syntaxen innan du sparar."
+    }
+  }
+}

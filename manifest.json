@@ -1,0 +1,12 @@
+{
+  "domain": "knx_doubleclick",
+  "name": "KNX Dubbelklicksdetektor",
+  "version": "0.3.16",
+  "documentation": "https://github.com/DinGithub/knx_doubleclick",
+  "issue_tracker": "https://github.com/DinGithub/knx_doubleclick/issues",
+  "codeowners": ["@DinGithubAnvändare"],
+  "requirements": [],
+  "dependencies": ["knx"],
+  "iot_class": "local_push",
+  "config_flow": true
+}
