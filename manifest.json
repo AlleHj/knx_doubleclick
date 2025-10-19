@@ -1,12 +1,15 @@
 {
   "domain": "knx_doubleclick",
   "name": "KNX Dubbelklicksdetektor",
-  "version": "0.3.16",
+  "version": "0.8.15",
   "documentation": "https://github.com/DinGithub/knx_doubleclick",
   "issue_tracker": "https://github.com/DinGithub/knx_doubleclick/issues",
   "codeowners": ["@DinGithubAnvändare"],
   "requirements": [],
-  "dependencies": ["knx"],
+  "dependencies": ["knx", "http", "frontend"],
   "iot_class": "local_push",
-  "config_flow": true
+  "config_flow": true,
+  "frontend_modules": [
+    "/knx_doubleclick_panels/knx-yaml-editor-panel.js"
+  ]
 }
