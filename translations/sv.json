@@ -13,7 +13,8 @@
       }
     },
     "error": {
-      "unknown": "Oväntat fel inträffade."
+      "unknown": "Oväntat fel inträffade.",
+      "name_suffix_already_configured": "En instans med detta namnsuffix är redan konfigurerad. Välj ett unikt suffix."
     },
     "abort": {
       "already_configured": "En enhet med denna unika identifierare är redan konfigurerad."
@@ -22,21 +23,28 @@
   "options": {
     "step": {
       "init": {
-        "title": "KNX Dubbelklicksdetektor: Ändra Inställningar",
-        "description": "Justera inställningarna för **{config_entry_name}**.\nÅtgärder för denna instans redigeras i YAML-editorn nedan och sparas till filen: {actions_file_path}.\nDen initiala filen skapas med en uppsättning exempel. Om filen tas bort externt, kommer den återskapas med standardexempel nästa gång denna dialog öppnas.",
+        "title": "KNX Dubbelklicksdetektor: Ändra Inställningar (Välj åtgärd)",
+        "menu_options": {
+          "basic_options": "Grundläggande Inställningar",
+          "edit_yaml_dialog": "Redigera YAML Åtgärder"
+        }
+      },
+      "basic_options": {
+        "title": "KNX Dubbelklicksdetektor: Grundläggande Inställningar",
+        "description": "Justera de grundläggande inställningarna för '{config_entry_name}'.\nSökväg till associerad åtgärdsfil: `{actions_file_path}`\n\nObservera: Ändringar av 'Namnsuffix' görs genom att ta bort och lägga till integrationen på nytt.",
         "data": {
           "knx_group_address": "KNX Gruppadress att lyssna på",
           "knx_value": "KNX Värde att reagera på",
-          "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)",
-          "actions_yaml_editor_content": "Åtgärder (YAML - redigerar den associerade filen)"
+          "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)"
         }
+      },
+      "edit_yaml_dialog": {
+        "title": "Redigera YAML Åtgärder för {config_entry_name}",
+        "description": "{panel_html_content}"
       }
     },
     "error": {
-        "unknown_option_error": "Ett okänt fel uppstod vid hantering av optioner.",
-        "cannot_read_actions_file": "Kunde inte läsa åtgärdsfilen. En ny fil med standardexempel kan ha skapats/använts. Kontrollera loggarna och filrättigheter.",
-        "cannot_write_actions_file": "Kunde inte spara ändringar till åtgärdsfilen. Kontrollera loggarna och filrättigheter.",
-        "invalid_actions_yaml_in_editor": "YAML-koden för åtgärder i editorn är ogiltig. Korrigera syntaxen innan du sparar."
+        "unknown_option_error": "Ett okänt fel uppstod vid hantering av optioner."
     }
   }
 }
