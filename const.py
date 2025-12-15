@@ -41,7 +41,7 @@ DEFAULT_ACTIONS_FILE_CONTENT = """#---------------------------------------------
 #
 # Denna fil är kopplad till en specifik instans av KNX Dubbelklicksdetektor.
 # Du kan identifiera vilken instans genom kommentarerna som automatiskt läggs till
-# överst i denna fil när den skapas, via sensor-entitetens attribut,
+# överst i denna fil när den skapas, via sensor-entitetens attribut, 
 # eller via "Alternativ"-dialogen i Home Assistant för denna instans.
 #
 # Lägg till dina önskade Home Assistant-åtgärder i YAML-format nedan.
@@ -80,7 +80,7 @@ DEFAULT_ACTIONS_FILE_CONTENT = """#---------------------------------------------
 #     entity_id: scene.min_scen
 
 # Exempel: Kör ett befintligt Home Assistant-skript
-# - service: script.turn_on
+# - service: script.turn_on 
 #   target:
 #     entity_id: script.mitt_fantastiska_script
 
@@ -100,9 +100,9 @@ ATTR_LAST_TIME_DIFFERENCE = "last_time_difference_seconds"
 
 # Nycklar som indikerar att en åtgärd är mer komplex än ett enkelt serviceanrop
 COMPLEX_ACTION_KEYS = [
-    "condition", "delay", "repeat", "choose", "sequence",
-    "wait_template", "wait_for_trigger", "event", "event_template",
-    "variables", "stop", "parallel", "scene"
+    "condition", "delay", "repeat", "choose", "sequence", 
+    "wait_template", "wait_for_trigger", "event", "event_template", 
+    "variables", "stop", "parallel", "scene" 
 ]
 
 # Felnycklar för översättningar (Options Flow)

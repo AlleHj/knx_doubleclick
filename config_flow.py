@@ -41,7 +41,7 @@ class KnxDoubleClickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         errors: Dict[str, str] = {}
         if user_input is not None:
             name_suffix = user_input.get(CONF_NAME_SUFFIX, "").strip()
-            if not name_suffix:
+            if not name_suffix: 
                 name_suffix = DEFAULT_NAME_SUFFIX
             current_entries = self._async_current_entries(include_ignore=False)
             if any(entry.data.get(CONF_NAME_SUFFIX) == name_suffix for entry in current_entries):
@@ -85,7 +85,7 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
             step_id="init",
             menu_options={
                 "basic_options": "Grundläggande Inställningar",
-                "edit_yaml_dialog": "Redigera YAML Åtgärder"
+                "edit_yaml_dialog": "Redigera YAML Åtgärder" 
             }
         )
 
@@ -108,36 +108,36 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
         )
         placeholders = {
             "config_entry_name": self.config_entry.title or self.config_entry.data.get(CONF_NAME_SUFFIX, "Okänd"),
-            "actions_file_path": actions_file_path
+            "actions_file_path": actions_file_path 
         }
         return self.async_show_form(
             step_id="basic_options",
-            data_schema=options_schema,
+            data_schema=options_schema, 
             errors=errors,
             description_placeholders=placeholders,
-            last_step=True
+            last_step=True 
         )
-
+            
     async def async_step_edit_yaml_dialog(
-        self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: Optional[Dict[str, Any]] = None 
     ) -> config_entries.FlowResult:
         entry_id = self.config_entry.entry_id
-        _LOGGER.info("Visar YAML editor-dialog för entry: %s ('%s')",
+        _LOGGER.info("Visar YAML editor-dialog för entry: %s ('%s')", 
                      entry_id, self.config_entry.title)
 
         panel_html = f'<knx-yaml-editor-panel entryid="{entry_id}"></knx-yaml-editor-panel>'
-
+        
         # Hämta namnet på config entry för att använda i titeln
         config_entry_name = self.config_entry.title or \
                             self.config_entry.data.get(CONF_NAME_SUFFIX, f"Instans {entry_id[:8]}")
 
 
         return self.async_show_form(
-            step_id="edit_yaml_dialog",
-            data_schema=vol.Schema({}),
+            step_id="edit_yaml_dialog", 
+            data_schema=vol.Schema({}),   
             description_placeholders={
                 "panel_html_content": panel_html,
                 "config_entry_name": config_entry_name # Lade till denna!
             },
-            last_step=True
+            last_step=True 
         )

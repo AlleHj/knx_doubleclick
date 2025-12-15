@@ -37,7 +37,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Vidarebefordra setup till sensor-plattformen
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-
+    
     # Lägg till en lyssnare för när optioner uppdateras
     entry.async_on_unload(entry.add_update_listener(async_update_options_listener))
 
@@ -48,7 +48,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Laddar ur en config entry."""
     _LOGGER.info("Laddar ur config entry för KNX Dubbelklicksdetektor: %s", entry.title)
-
+    
     # Korrekt sätt att ladda ur plattformar
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 

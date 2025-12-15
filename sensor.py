@@ -68,7 +68,7 @@ async def async_setup_entry(
 ) -> None:
     # ... (samma som i v0.3.8) ...
     _LOGGER.debug("Sätter upp sensor för config entry: %s (ID: %s)", config_entry.title, config_entry.entry_id)
-
+    
     actions_file_path = _get_actions_file_path_for_sensor_instance(hass, config_entry)
     _LOGGER.info(
         "Åtgärdsfil för '%s' kommer att hanteras i: %s.",
@@ -91,7 +91,7 @@ async def async_setup_entry(
             def write_default_file_with_header():
                 actions_dir_parent_path = hass.config.path(ACTIONS_DIR_BASENAME)
                 if not os.path.exists(actions_dir_parent_path):
-                    os.makedirs(actions_dir_parent_path, exist_ok=True)
+                    os.makedirs(actions_dir_parent_path, exist_ok=True) 
                 with open(actions_file_path, "w", encoding="utf-8") as f:
                     f.write(full_content_for_new_file)
             await hass.async_add_executor_job(write_default_file_with_header)
@@ -100,7 +100,7 @@ async def async_setup_entry(
 
     name_suffix = config_entry.data.get(CONF_NAME_SUFFIX, DEFAULT_NAME_SUFFIX)
     full_sensor_name = f"KNX Dubbelklick Lyssnare {name_suffix}"
-
+    
     sensor = KnxDoubleClickSensor(hass, config_entry, full_sensor_name)
     async_add_entities([sensor])
     _LOGGER.info("Sensor '%s' tillagd för KNX Dubbelklicksdetektor.", full_sensor_name)
@@ -122,11 +122,11 @@ class KnxDoubleClickSensor(SensorEntity):
         self._last_valid_knx_event_time_utc: Optional[datetime.datetime] = None
         self._native_value: Optional[datetime.datetime] = None
         self._remove_listener: Optional[callable] = None
-
+        
         self._knx_group_address: Optional[str] = None
         self._knx_value: Optional[int] = None
         self._double_click_window_seconds: Optional[float] = None
-
+        
         self._actions_file_path = _get_actions_file_path_for_sensor_instance(hass, config_entry)
         self._last_time_difference_seconds: Optional[float] = None
 
@@ -161,7 +161,7 @@ class KnxDoubleClickSensor(SensorEntity):
         }
         if self._native_value:
             attrs[ATTR_LAST_CLICK_TIME] = dt_util.as_local(self._native_value).isoformat()
-
+        
         if self._last_time_difference_seconds is not None:
             attrs[ATTR_LAST_TIME_DIFFERENCE] = round(self._last_time_difference_seconds, 3)
         return attrs
@@ -172,9 +172,9 @@ class KnxDoubleClickSensor(SensorEntity):
         combined_config = {**self.config_entry.data, **self.config_entry.options}
 
         self._knx_group_address = combined_config.get(CONF_KNX_GROUP_ADDRESS)
-        self._knx_value = combined_config.get(CONF_KNX_VALUE)
+        self._knx_value = combined_config.get(CONF_KNX_VALUE) 
         self._double_click_window_seconds = combined_config.get(CONF_DOUBLE_CLICK_WINDOW_SECONDS)
-
+        
         name_suffix = self.config_entry.data.get(CONF_NAME_SUFFIX, DEFAULT_NAME_SUFFIX)
         self._name = f"KNX Dubbelklick Lyssnare {name_suffix}"
 
@@ -222,7 +222,7 @@ class KnxDoubleClickSensor(SensorEntity):
                 parsed_actions,
                 f"{self.name} Dubbelklick Åtgärd (från fil)",
                 DOMAIN,
-                script_mode=SCRIPT_MODE_SINGLE,
+                script_mode=SCRIPT_MODE_SINGLE, 
                 logger=_LOGGER,
             )
             _LOGGER.debug("Åtgärder kompilerade för %s. Antal åtgärder: %d", self.name, len(parsed_actions))
@@ -234,7 +234,7 @@ class KnxDoubleClickSensor(SensorEntity):
     async def async_added_to_hass(self) -> None:
         # ... (samma som i v0.3.8) ...
         await super().async_added_to_hass()
-
+        
         self.async_on_remove(
             self.config_entry.add_update_listener(self._async_options_updated)
         )
@@ -253,7 +253,7 @@ class KnxDoubleClickSensor(SensorEntity):
             self._remove_listener = None
 
         if self._knx_group_address:
-            _LOGGER.debug("Sensor %s börjar lyssna på KNX-event för GA: %s, Värde: %s",
+            _LOGGER.debug("Sensor %s börjar lyssna på KNX-event för GA: %s, Värde: %s", 
                           self.name, self._knx_group_address, self._knx_value)
             self._remove_listener = self.hass.bus.async_listen(
                 "knx_event", self._async_handle_knx_event
@@ -273,17 +273,17 @@ class KnxDoubleClickSensor(SensorEntity):
     async def _async_options_updated(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
         # ... (samma som i v0.3.8) ...
         _LOGGER.debug("Options uppdaterade för %s sensor, uppdaterar konfiguration och startar om lyssnare.", self.name)
-
+        
         old_ga = self._knx_group_address
         old_val = self._knx_value
 
         self._update_instance_variables_from_config()
-
+        
         if old_ga != self._knx_group_address or old_val != self._knx_value:
             _LOGGER.info("KNX lyssnarparametrar ändrade för %s. Startar om lyssnaren.", self.name)
             self._stop_knx_listener()
             self._start_knx_listener()
-
+            
         self.async_write_ha_state()
 
     @callback
@@ -300,7 +300,7 @@ class KnxDoubleClickSensor(SensorEntity):
         )
 
         destination_address = event.data.get("destination")
-
+        
         value_from_event_value_field = event.data.get("value")
         actual_value_from_event = value_from_event_value_field
 
@@ -313,7 +313,7 @@ class KnxDoubleClickSensor(SensorEntity):
                 type(value_from_event_data_field)
             )
             actual_value_from_event = value_from_event_data_field
-
+        
         if actual_value_from_event is None:
             _LOGGER.debug(
                 "Sensor '%s': Varken 'event.data.value' eller 'event.data.data' innehöll ett användbart värde. Ignorerar event.",
@@ -328,7 +328,7 @@ class KnxDoubleClickSensor(SensorEntity):
             actual_value_from_event, type(actual_value_from_event),
             self._knx_value, type(self._knx_value)
         )
-
+        
         comparable_value = None
         try:
             if isinstance(actual_value_from_event, list) and len(actual_value_from_event) == 1:
@@ -347,21 +347,21 @@ class KnxDoubleClickSensor(SensorEntity):
 
         if (
             destination_address == self._knx_group_address
-            and comparable_value == self._knx_value
+            and comparable_value == self._knx_value 
         ):
             _LOGGER.info(
                 "MATCH! KNX-event för '%s': GA '%s', Värde '%s' (jämfört som %s). Bearbetar dubbelklicklogik...",
                 self.name,
                 destination_address,
-                actual_value_from_event,
+                actual_value_from_event, 
                 comparable_value
             )
             current_time_utc = dt_util.utcnow()
             previous_event_time_utc = self._last_valid_knx_event_time_utc
 
-            self._native_value = current_time_utc
+            self._native_value = current_time_utc 
             self._last_valid_knx_event_time_utc = current_time_utc
-            self._last_time_difference_seconds = None
+            self._last_time_difference_seconds = None 
 
             if previous_event_time_utc and self._double_click_window_seconds is not None:
                 time_difference_seconds = (
@@ -382,12 +382,12 @@ class KnxDoubleClickSensor(SensorEntity):
                         self.name,
                         time_difference_seconds,
                     )
-
+                    
                     parsed_actions_list = await self._load_parsed_actions_from_file()
 
                     if parsed_actions_list:
                         _LOGGER.debug("Agerar på %d parsade åtgärder: %s", len(parsed_actions_list), parsed_actions_list)
-
+                        
                         # ---- Start: Logik för att köra åtgärder med korrigerad indentering ----
                         all_actions_are_simple_services = True
                         if not parsed_actions_list:
@@ -399,12 +399,12 @@ class KnxDoubleClickSensor(SensorEntity):
                                         not any(key in action_dict_check for key in COMPLEX_ACTION_KEYS)):
                                     all_actions_are_simple_services = False
                                     break
-
-                        actions_executed_successfully_directly = False
-
+                        
+                        actions_executed_successfully_directly = False 
+                        
                         if all_actions_are_simple_services:
                             _LOGGER.info("Alla %d åtgärder är enkla serviceanrop. Försöker köra dem direkt sekventiellt.", len(parsed_actions_list))
-                            actions_executed_successfully_directly = True
+                            actions_executed_successfully_directly = True 
                             for i, action_dict in enumerate(parsed_actions_list):
                                 service_call_str = str(action_dict["service"])
                                 service_data = action_dict.get("data", {}).copy()
@@ -414,10 +414,10 @@ class KnxDoubleClickSensor(SensorEntity):
                                     service_data.update(target_data)
                                 elif isinstance(target_data, str) and "entity_id" not in service_data :
                                      service_data["entity_id"] = target_data
-
+                                
                                 if "entity_id" in action_dict and "entity_id" not in service_data:
                                     service_data["entity_id"] = action_dict["entity_id"]
-
+                                
                                 try:
                                     domain, service_name = service_call_str.split(".", 1)
                                     _LOGGER.info(
@@ -431,14 +431,14 @@ class KnxDoubleClickSensor(SensorEntity):
                                     _LOGGER.info("Direkt serviceanrop %d/%d för %s lyckades.", i + 1, len(parsed_actions_list), self.name)
                                 except ValueError as e: # Korrekt indentering av hela try-except blocket
                                     _LOGGER.error(
-                                        "Fel vid parsning av service för direktanrop %d/%d ('%s') för %s: %s. Åtgärd: %s",
+                                        "Fel vid parsning av service för direktanrop %d/%d ('%s') för %s: %s. Åtgärd: %s", 
                                         i + 1, len(parsed_actions_list), service_call_str, self.name, e, action_dict, exc_info=True
                                     )
-                                    actions_executed_successfully_directly = False
-                                    break
+                                    actions_executed_successfully_directly = False 
+                                    break 
                                 except Exception as e:
                                     _LOGGER.error(
-                                        "Fel vid direkt serviceanrop %d/%d för %s: %s. Åtgärd: %s",
+                                        "Fel vid direkt serviceanrop %d/%d för %s: %s. Åtgärd: %s", 
                                         i + 1, len(parsed_actions_list), self.name, e, action_dict, exc_info=True
                                     )
                                     actions_executed_successfully_directly = False
@@ -449,7 +449,7 @@ class KnxDoubleClickSensor(SensorEntity):
                             elif not actions_executed_successfully_directly and parsed_actions_list :
                                 _LOGGER.error("Minst ett direkt serviceanrop misslyckades för %s. Inte alla åtgärder kördes.", self.name)
                         # Slut på if all_actions_are_simple_services
-
+                        
                         # Kör Script-hjälparen om det INTE var enbart enkla anrop som alla lyckades, ELLER om listan var tom från början men ändå ska testas med Script.
                         # Mer korrekt: Kör Script om INTE (alla var enkla OCH alla lyckades direkt).
                         # Detta täcker: komplexa åtgärder, eller om direkta anrop misslyckades (för att få HA Cores felmeddelande).
@@ -458,7 +458,7 @@ class KnxDoubleClickSensor(SensorEntity):
                                 _LOGGER.info("Åtgärdslistan innehåller komplexa åtgärder, använder Script-hjälparen för %s.", self.name)
                             else: # Betyder all_simple var true, men actions_executed_successfully_directly var false
                                 _LOGGER.warning("Direkta serviceanrop misslyckades för %s, försöker ändå med Script-hjälparen för att logga eventuellt HA Core-fel.", self.name)
-
+                            
                             script_runner = self._compile_script_from_parsed_actions(parsed_actions_list)
                             if script_runner:
                                 script_context = Context()
@@ -491,7 +491,7 @@ class KnxDoubleClickSensor(SensorEntity):
                             "Dubbelklick detekterat för %s, men inga åtgärder är konfigurerade i filen %s eller så kunde filen/skriptet inte laddas/kompileras.",
                             self.name, self._actions_file_path
                         )
-
+            
             self.async_write_ha_state()
         else: # Om inte GA och värde matchar
             if destination_address == self._knx_group_address:
