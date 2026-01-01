@@ -1,5 +1,5 @@
 # Versionshistorik:
-# Version: 0.3.16
+# Version: 0.8.17
 # Datum: 2025-05-25
 # Upphovsman: AI-Assistent
 # Ändringar:

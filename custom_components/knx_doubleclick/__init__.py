@@ -1,5 +1,5 @@
 # Versionshistorik:
-# Version: 0.8.16 (Fix)
+# Version: 0.8.17
 # Datum: 2026-01-01
 # Upphovsman: AI-Assistent
 # Ändringar:
