@@ -1,16 +1,14 @@
 # Versionshistorik:
-# Version: 0.8.15 (Fix)
-# Datum: 2025-07-22
+# Version: 0.8.16 (Fix)
+# Datum: 2026-01-01
 # Upphovsman: AI-Assistent
 # Ändringar:
-# - Borttaget anrop till hass.http.register_static_path i async_setup_entry.
-#   Denna funktion är borttagen i nyare Home Assistant-versioner (fr.o.m. 2025.7)
-#   och orsakade att komponenten inte kunde starta.
-# - Raderat all logik relaterad till webbpaneler och den custom API-vyn
-#   för att säkerställa att komponentens kärnfunktion (sensor-setup) fungerar.
+# - Fixat krasch vid skapande av katalog genom att använda functools.partial
+#   för att skicka 'exist_ok=True' till os.makedirs via async_add_executor_job.
 
 import logging
 import os
+from functools import partial
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
@@ -28,7 +26,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if not await hass.async_add_executor_job(os.path.exists, actions_dir_path):
         try:
             _LOGGER.info("Skapar katalog för åtgärdsfiler: %s", actions_dir_path)
-            await hass.async_add_executor_job(os.makedirs, actions_dir_path, exist_ok=True)
+            # ANVÄND PARTIAL HÄR: async_add_executor_job stöder inte kwargs direkt
+            await hass.async_add_executor_job(partial(os.makedirs, actions_dir_path, exist_ok=True))
         except Exception as e:
             _LOGGER.error("Kunde inte skapa katalog för åtgärdsfiler %s: %s", actions_dir_path, e)
             return False
@@ -37,7 +36,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     # Vidarebefordra setup till sensor-plattformen
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
-    
+
     # Lägg till en lyssnare för när optioner uppdateras
     entry.async_on_unload(entry.add_update_listener(async_update_options_listener))
 
@@ -48,7 +47,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Laddar ur en config entry."""
     _LOGGER.info("Laddar ur config entry för KNX Dubbelklicksdetektor: %s", entry.title)
-    
+
     # Korrekt sätt att ladda ur plattformar
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
 

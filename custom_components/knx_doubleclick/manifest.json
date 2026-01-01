@@ -1,7 +1,7 @@
 {
   "domain": "knx_doubleclick",
   "name": "KNX Dubbelklicksdetektor",
-  "version": "0.8.15",
+  "version": "0.8.16",
   "documentation": "https://github.com/AlleHj/knx_doubleclick",
   "issue_tracker": "https://github.com/AlleHj/knx_doubleclick/issues",
   "codeowners": [
