@@ -29,9 +29,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
           # KONFIGURATION
-          PR_AGENT__CONFIG__PROVIDER: "google"
-          # Vi kör 1.5-pro först för att bekräfta att kopplingen fungerar.
-          # När du ser att den svarar, byter vi till 3-pro-preview!
+          PR_AGENT__CONFIG__PROVIDER: "litellm"
           PR_AGENT__CONFIG__MODEL: "gemini/gemini-3-pro-preview"
           
           PR_AGENT__EXTRA_INSTRUCTIONS: "Focus on Home Assistant best practices, pythonic code, and avoiding blocking I/O in the event loop."
