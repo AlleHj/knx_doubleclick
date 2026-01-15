@@ -1,3 +1,54 @@
+# Version: 2.0.1 | Datum: 2026-01-15
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+
+jobs:
+  # 1. Validera struktur och HACS-krav
+  validate:
+    name: Validate Structure & HACS
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Hassfest Validation
+        uses: home-assistant/actions/hassfest@master
+
+      - name: HACS Validation
+        uses: hacs/action@main
+        with:
+          category: integration
+          ignore: brands # Vi ignorerar kravet på officiell ikon just nu
+
+  # 2. Linting (Kodstil och kvalitet)
+  lint:
+    name: Lint Code (Ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: pip install ruff
+
+      - name: Run Ruff
+        run: ruff check .
+
 # 3. Test Matrix (Current & Next Major)
   test:
     name: Test (Python ${{ matrix.python-version }})
