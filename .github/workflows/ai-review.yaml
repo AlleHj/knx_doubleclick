@@ -1,4 +1,4 @@
-# Version: 2.1.0 | Datum: 2026-01-15
+# Version: 2.2.0 | Datum: 2026-01-15
 name: AI Code Review (Gemini)
 
 permissions:
@@ -21,11 +21,21 @@ jobs:
       - name: PR Agent
         uses: Codium-ai/pr-agent@main
         env:
-          # Vi ger agenten tillgång till din nyckel under alla möjliga namn
+          # API-nycklar
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          LITELLM_MASTER_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-          # Vi skickar INGA config-variabler här. 
-          # Agenten MÅSTE läsa .pr_agent.toml i roten.
+          # KONFIGURATION - TVINGANDE
+          # Vi använder litellm för maximal flexibilitet
+          PR_AGENT__CONFIG__PROVIDER: "litellm"
+          
+          # Vi testar med Flash först då den är snabbast och mest kompatibel
+          PR_AGENT__CONFIG__MODEL: "gemini/gemini-1.5-flash"
+          
+          # VIKTIGT: Vi tömmer fallback-listan! 
+          # Detta tvingar agenten att visa det riktiga felet om Gemini misslyckas,
+          # istället för att försöka byta till OpenAI och ge felmeddelande om dummy-nycklar.
+          PR_AGENT__CONFIG__FALLBACK_MODELS: '[]'
+          
+          PR_AGENT__EXTRA_INSTRUCTIONS: "Focus on Home Assistant best practices."
