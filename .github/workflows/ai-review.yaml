@@ -1,4 +1,4 @@
-# Version: 1.3.0 | Datum: 2026-01-15
+# Version: 1.5.0 | Datum: 2026-01-15
 name: AI Code Review (Gemini)
 
 permissions:
@@ -20,12 +20,14 @@ jobs:
         uses: Codium-ai/pr-agent@main
         env:
           # API-nycklar
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-          # KONFIGURATION (Vi använder understreck "__" för att tvinga inställningarna)
+          
+          # KONFIGURATION
+          # 1. Vi använder "google" som provider explicit
           PR_AGENT__CONFIG__PROVIDER: "google"
+          # 2. VIKTIGT: Vi använder prefixet "gemini/" i modellnamnet
+          # Vi testar 1.5 först. När detta funkar byter vi till "gemini/gemini-3-pro-preview"
           PR_AGENT__CONFIG__MODEL: "gemini-3-pro-preview"
-
-          # Instruktioner
+          
           PR_AGENT__EXTRA_INSTRUCTIONS: "Focus on Home Assistant best practices, pythonic code, and avoiding blocking I/O in the event loop."
