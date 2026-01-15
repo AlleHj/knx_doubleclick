@@ -1,4 +1,4 @@
-# Version: 1.6.0 | Datum: 2026-01-15
+# Version: 2.0.0 | Datum: 2026-01-15
 name: AI Code Review (Gemini)
 
 permissions:
@@ -7,16 +7,13 @@ permissions:
   issues: write
 
 on:
-  # 1. Körs när du pushar kod eller öppnar PR
   pull_request:
     types: [opened, reopened, ready_for_review, synchronize]
-  # 2. Körs när du skriver kommandon (t.ex. /review) i chatten
   issue_comment:
     types: [created, edited]
 
 jobs:
   pr_agent_job:
-    # Kör inte om det är en bot som skriver, och kör bara på PR-kommentarer (inte vanliga issues)
     if: ${{ github.event.sender.type != 'Bot' && (github.event_name == 'pull_request' || github.event.issue.pull_request) }}
     runs-on: ubuntu-latest
     name: Run PR Agent
@@ -24,12 +21,12 @@ jobs:
       - name: PR Agent
         uses: Codium-ai/pr-agent@main
         env:
-          # API-nycklar
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }} 
+          # Vi skickar in din nyckel till alla variabler som Litellm kan tänkas leta efter
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          LITELLM_MASTER_KEY: ${{ secrets.GEMINI_API_KEY }} # Hängslen och livrem
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-          # KONFIGURATION
-          PR_AGENT__CONFIG__PROVIDER: "litellm"
-          PR_AGENT__CONFIG__MODEL: "gemini/gemini-1.5-pro"
-          
+          # Konfigurationen hanteras nu av .pr_agent.toml filen!
+          # Men vi behåller extra instruktioner här
           PR_AGENT__EXTRA_INSTRUCTIONS: "Focus on Home Assistant best practices, pythonic code, and avoiding blocking I/O in the event loop."
