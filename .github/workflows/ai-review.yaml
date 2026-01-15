@@ -1,4 +1,4 @@
-# Version: 2.0.0 | Datum: 2026-01-15
+# Version: 2.1.0 | Datum: 2026-01-15
 name: AI Code Review (Gemini)
 
 permissions:
@@ -21,12 +21,11 @@ jobs:
       - name: PR Agent
         uses: Codium-ai/pr-agent@main
         env:
-          # Vi skickar in din nyckel till alla variabler som Litellm kan tänkas leta efter
+          # Vi ger agenten tillgång till din nyckel under alla möjliga namn
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          LITELLM_MASTER_KEY: ${{ secrets.GEMINI_API_KEY }} # Hängslen och livrem
+          LITELLM_MASTER_KEY: ${{ secrets.GEMINI_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           
-          # Konfigurationen hanteras nu av .pr_agent.toml filen!
-          # Men vi behåller extra instruktioner här
-          PR_AGENT__EXTRA_INSTRUCTIONS: "Focus on Home Assistant best practices, pythonic code, and avoiding blocking I/O in the event loop."
+          # Vi skickar INGA config-variabler här. 
+          # Agenten MÅSTE läsa .pr_agent.toml i roten.
