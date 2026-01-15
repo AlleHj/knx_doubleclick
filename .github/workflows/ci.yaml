@@ -1,4 +1,4 @@
-# Version: 2.0.1 | Datum: 2026-01-15
+# Version: 2.1.0 | Datum: 2026-01-15
 name: CI
 
 on:
@@ -28,7 +28,7 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
-          ignore: brands # Vi ignorerar kravet på officiell ikon just nu
+          ignore: brands
 
   # 2. Linting (Kodstil och kvalitet)
   lint:
@@ -49,9 +49,9 @@ jobs:
       - name: Run Ruff
         run: ruff check .
 
-# 3. Test Matrix (Current & Next Major)
-  test:
-    name: Test (Python ${{ matrix.python-version }})
+  # 3. Test Stable (MÅSTE fungera för att få mergea)
+  test-stable:
+    name: Test Stable (Python ${{ matrix.python-version }})
     runs-on: ubuntu-latest
     needs: [validate, lint]
     strategy:
@@ -70,6 +70,41 @@ jobs:
       - name: Install dependencies
         run: |
           pip install pytest pytest-homeassistant-custom-component
+
+      - name: Run Tests
+        run: |
+          if [ -d "tests" ]; then
+            pytest tests
+          else
+            echo "No tests folder found - skipping pytest"
+          fi
+
+  # 4. Test Nightly (Varning för framtida fel)
+  test-nightly:
+    name: Test Nightly (Dev Branch)
+    runs-on: ubuntu-latest
+    needs: [validate, lint]
+    continue-on-error: true # <-- VIKTIGT: Detta jobb får krascha utan att stoppa din PR
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13" # Dev körs oftast bäst på senaste Python
+
+      - name: Install dependencies & HA Dev
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libpcap-dev
+
+          # Installera test-ramverket först
+          pip install pytest pytest-homeassistant-custom-component
+
+          # TVINGA installation av senaste HA direkt från GitHub (Dev-branchen)
+          # --pre tillåter pre-releases, --upgrade tvingar uppdatering
+          pip install git+https://github.com/home-assistant/core.git@dev --upgrade --force-reinstall
 
       - name: Run Tests
         run: |
