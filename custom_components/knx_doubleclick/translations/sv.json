@@ -22,25 +22,14 @@
   },
   "options": {
     "step": {
-      "init": {
-        "title": "KNX Dubbelklicksdetektor: Ändra Inställningar (Välj åtgärd)",
-        "menu_options": {
-          "basic_options": "Grundläggande Inställningar",
-          "edit_yaml_dialog": "Redigera YAML Åtgärder"
-        }
-      },
       "basic_options": {
-        "title": "KNX Dubbelklicksdetektor: Grundläggande Inställningar",
-        "description": "Justera de grundläggande inställningarna för '{config_entry_name}'.\nSökväg till associerad åtgärdsfil: `{actions_file_path}`\n\nObservera: Ändringar av 'Namnsuffix' görs genom att ta bort och lägga till integrationen på nytt.",
+        "title": "KNX Dubbelklicksdetektor: Grundläggande",
+        "description": "Justera de grundläggande inställningarna för '{config_entry_name}'.\nFil: `{actions_file_path}`",
         "data": {
           "knx_group_address": "KNX Gruppadress att lyssna på",
           "knx_value": "KNX Värde att reagera på",
           "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)"
         }
-      },
-      "edit_yaml_dialog": {
-        "title": "Redigera YAML Åtgärder för {config_entry_name}",
-        "description": "{panel_html_content}"
       }
     },
     "error": {
