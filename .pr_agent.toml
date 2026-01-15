@@ -1,0 +1,14 @@
+[pr_reviewer]
+# Vi aktiverar några extra funktioner för snyggare output
+enable_review_labels_security = true
+enable_review_labels_effort = true
+require_tests_review = true
+
+[config]
+# HÄR tvingar vi in inställningarna
+model = "gemini/gemini-1.5-pro"
+provider = "litellm"
+
+# Tvinga inte agenten att vara "snäll" med tokens, vi har Googles kvot
+model_turbo = "gemini/gemini-1.5-flash"
+fallback_models = ["gemini/gemini-1.5-flash"]
