@@ -1,4 +1,4 @@
-# Version: 2.0.0 | Datum: 2026-01-15
+# Version: 2.0.1 | Datum: 2026-01-15
 name: CI
 
 on:
@@ -28,6 +28,7 @@ jobs:
         uses: hacs/action@main
         with:
           category: integration
+          ignore: brands # Vi ignorerar kravet på officiell ikon just nu
 
   # 2. Linting (Kodstil och kvalitet)
   lint:
