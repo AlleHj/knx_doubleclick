@@ -1,3 +1,10 @@
+# Versionshistorik:
+# Version: 0.8.20
+# Datum: 2026-01-15
+# Upphovsman: Home Assistant Expert
+# Ändringar:
+# - Renasat bort konstanter för YAML-editor då den funktionen tagits bort från UI.
+
 """Konstanter för KNX Dubbelklicksdetektor-integrationen."""
 
 # Domänen för integrationen
@@ -11,7 +18,6 @@ CONF_NAME_SUFFIX = "name_suffix"
 CONF_KNX_GROUP_ADDRESS = "knx_group_address"
 CONF_KNX_VALUE = "knx_value"
 CONF_DOUBLE_CLICK_WINDOW_SECONDS = "double_click_window_seconds"
-CONF_YAML_CONTENT = "yaml_content" # Nyckel för att hantera innehållet i native editor
 
 # Standardvärden
 DEFAULT_KNX_VALUE = 1

@@ -22,13 +22,6 @@
   },
   "options": {
     "step": {
-      "init": {
-        "title": "KNX Dubbelklicksdetektor: Inställningar",
-        "menu_options": {
-          "basic_options": "Grundläggande Inställningar",
-          "edit_yaml_dialog": "Redigera YAML Åtgärder"
-        }
-      },
       "basic_options": {
         "title": "KNX Dubbelklicksdetektor: Grundläggande",
         "description": "Justera de grundläggande inställningarna för '{config_entry_name}'.\nFil: `{actions_file_path}`",
@@ -37,19 +30,10 @@
           "knx_value": "KNX Värde att reagera på",
           "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)"
         }
-      },
-      "edit_yaml_dialog": {
-        "title": "Redigera Åtgärder ({config_entry_name})",
-        "description": "Redigera YAML-filen direkt nedan.\nSökväg: `{file_path}`",
-        "data": {
-          "yaml_content": "YAML Konfiguration"
-        }
       }
     },
     "error": {
-        "unknown_option_error": "Ett okänt fel uppstod.",
-        "cannot_read_actions_file": "Kunde inte läsa åtgärdsfilen från disken.",
-        "cannot_write_actions_file": "Kunde inte spara åtgärdsfilen till disken."
+        "unknown_option_error": "Ett okänt fel uppstod vid hantering av optioner."
     }
   }
 }
