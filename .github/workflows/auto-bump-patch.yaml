@@ -5,8 +5,8 @@ on:
     branches:
       - master
     paths:
-      - 'custom_components/**' # Kör bara om vi ändrat i komponenten
-      - '!custom_components/knx_doubleclick/manifest.json' # Ignorera om vi bara ändrat versionen (för att undvika loop)
+      - 'custom_components/**'
+      - '!custom_components/knx_doubleclick/manifest.json'
 
 permissions:
   contents: write
@@ -21,27 +21,29 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Bump Patch Version
+      - name: Bump Patch Version & Update README
         id: bump
         run: |
-          # Hitta manifest-filen
-          FILE="custom_components/knx_doubleclick/manifest.json"
-          
-          # Läs nuvarande version med jq
-          CURRENT_VERSION=$(jq -r '.version' $FILE)
+          # 1. Hantera manifest.json
+          MANIFEST="custom_components/knx_doubleclick/manifest.json"
+          CURRENT_VERSION=$(jq -r '.version' $MANIFEST)
           echo "Current version: $CURRENT_VERSION"
           
-          # Dela upp x.y.z
           IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
-          
-          # Öka z (patch)
           NEW_PATCH=$((patch + 1))
           NEW_VERSION="$major.$minor.$NEW_PATCH"
           
           echo "New version: $NEW_VERSION"
           
-          # Skriv tillbaka till filen med jq (använd en temporär fil)
-          jq --arg v "$NEW_VERSION" '.version = $v' $FILE > tmp.$$.json && mv tmp.$$.json $FILE
+          # Skriv till manifest.json
+          jq --arg v "$NEW_VERSION" '.version = $v' $MANIFEST > tmp.$$.json && mv tmp.$$.json $MANIFEST
+          
+          # 2. Uppdatera README.md
+          # Vi letar efter mönstret: version-X.Y.Z-blue.svg
+          # och ersätter det med: version-NY_VERSION-blue.svg
+          sed -i "s/version-$CURRENT_VERSION-blue.svg/version-$NEW_VERSION-blue.svg/g" README.md
+          
+          echo "Updated README.md version badge to $NEW_VERSION"
           
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
@@ -49,6 +51,10 @@ jobs:
         run: |
           git config --global user.name "Version Bot"
           git config --global user.email "bot@noreply.github.com"
+          
+          # Lägg till båda filerna
           git add custom_components/knx_doubleclick/manifest.json
+          git add README.md
+          
           git commit -m "chore: bump version to ${{ steps.bump.outputs.version }} [skip ci]"
           git push
