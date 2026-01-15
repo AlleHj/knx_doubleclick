@@ -1,0 +1,70 @@
+name: Create Release (Special)
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: 'Branch to release from'
+        required: true
+        default: 'master'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.branch }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bump Minor Version (y++)
+        id: bump
+        run: |
+          FILE="custom_components/knx_doubleclick/manifest.json"
+          
+          CURRENT_VERSION=$(jq -r '.version' $FILE)
+          echo "Current version: $CURRENT_VERSION"
+          
+          IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
+          
+          # Öka y (minor) och nollställ z (patch)
+          NEW_MINOR=$((minor + 1))
+          NEW_VERSION="$major.$NEW_MINOR.0"
+          
+          echo "New Release Version: $NEW_VERSION"
+          
+          # Uppdatera filen
+          jq --arg v "$NEW_VERSION" '.version = $v' $FILE > tmp.$$.json && mv tmp.$$.json $FILE
+          
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit and Push Version Bump
+        run: |
+          git config --global user.name "Release Bot"
+          git config --global user.email "bot@noreply.github.com"
+          git add custom_components/knx_doubleclick/manifest.json
+          git commit -m "Release ${{ steps.bump.outputs.version }}"
+          git push
+
+      - name: Create Zip File
+        run: |
+          # Gå in i mappen så att strukturen blir rätt i zip-filen (bra för HACS)
+          cd custom_components/knx_doubleclick
+          # Zippa allt innehåll
+          zip -r ../../knx_doubleclick.zip .
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.bump.outputs.version }}
+          name: Release ${{ steps.bump.outputs.version }}
+          body: "New release created automatically from ${{ github.event.inputs.branch }}."
+          files: knx_doubleclick.zip
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
