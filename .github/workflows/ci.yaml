@@ -1,4 +1,4 @@
-# Version: 2.1.0 | Datum: 2026-01-15
+# Version: 2.2.0 | Datum: 2026-01-15
 name: CI
 
 on:
@@ -13,9 +13,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  # 1. Validera struktur och HACS-krav
+  # 1. Validera struktur, HACS-krav och skapa ZIP-paket
   validate:
-    name: Validate Structure & HACS
+    name: Validate & Package
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,6 +29,40 @@ jobs:
         with:
           category: integration
           ignore: brands
+
+      # --- NYTT: Hämta version och skapa ZIP ---
+      - name: Get current version
+        id: version
+        run: |
+          # Läs ut versionen från manifest.json med jq
+          VERSION=$(jq -r '.version' custom_components/knx_doubleclick/manifest.json)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Extracted version: $VERSION"
+
+      - name: Create Zip File
+        run: |
+          # Gå in i custom_components för att zippa mappen knx_doubleclick
+          # Detta ger rätt mappstruktur inuti zip-filen för HACS
+          cd custom_components
+          zip -r ../knx_doubleclick_${{ steps.version.outputs.version }}.zip knx_doubleclick
+          
+          # Gå tillbaka till roten och kolla storleken
+          cd ..
+          SIZE=$(du -h knx_doubleclick_${{ steps.version.outputs.version }}.zip | cut -f1)
+          
+          echo "---------------------------------------------------"
+          echo "✅ Created zip file: knx_doubleclick_${{ steps.version.outputs.version }}.zip"
+          echo "ℹ️ Version: ${{ steps.version.outputs.version }}"
+          echo "📦 Size: $SIZE"
+          echo "---------------------------------------------------"
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          # Detta namn kommer synas under 'Artifacts' i GitHub Actions summary
+          name: knx_doubleclick_v${{ steps.version.outputs.version }}
+          path: knx_doubleclick_${{ steps.version.outputs.version }}.zip
+      # -----------------------------------------
 
   # 2. Linting (Kodstil och kvalitet)
   lint:
