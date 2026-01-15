@@ -21,12 +21,13 @@ jobs:
           ref: ${{ github.event.inputs.branch }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Bump Minor Version (y++)
+      - name: Bump Minor Version (y++) & Update README
         id: bump
         run: |
-          FILE="custom_components/knx_doubleclick/manifest.json"
+          MANIFEST="custom_components/knx_doubleclick/manifest.json"
           
-          CURRENT_VERSION=$(jq -r '.version' $FILE)
+          # Läs nuvarande version
+          CURRENT_VERSION=$(jq -r '.version' $MANIFEST)
           echo "Current version: $CURRENT_VERSION"
           
           IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
@@ -37,33 +38,47 @@ jobs:
           
           echo "New Release Version: $NEW_VERSION"
           
-          # Uppdatera filen
-          jq --arg v "$NEW_VERSION" '.version = $v' $FILE > tmp.$$.json && mv tmp.$$.json $FILE
+          # Uppdatera manifest.json
+          jq --arg v "$NEW_VERSION" '.version = $v' $MANIFEST > tmp.$$.json && mv tmp.$$.json $MANIFEST
           
+          # Uppdatera README.md
+          # Byter ut den gamla versionssträngen mot den nya i badgen
+          sed -i "s/version-$CURRENT_VERSION-blue.svg/version-$NEW_VERSION-blue.svg/g" README.md
+          
+          echo "Updated README.md version badge to $NEW_VERSION"
+          
+          # Spara versionen till output för nästa steg
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and Push Version Bump
         run: |
           git config --global user.name "Release Bot"
           git config --global user.email "bot@noreply.github.com"
+          
+          # Lägg till BÅDA filerna till committen
           git add custom_components/knx_doubleclick/manifest.json
+          git add README.md
+          
           git commit -m "Release ${{ steps.bump.outputs.version }}"
           git push
 
-      - name: Create Zip File
+      - name: Create Clean Zip File
         run: |
-          # Gå in i mappen så att strukturen blir rätt i zip-filen (bra för HACS)
-          cd custom_components/knx_doubleclick
-          # Zippa allt innehåll
-          zip -r ../../knx_doubleclick.zip .
+          cd custom_components
+          # Zippa mappen 'knx_doubleclick' men exkludera skräpfiler
+          # Vi döper filen med versionsnummer för tydlighet
+          zip -r ../knx_doubleclick_${{ steps.bump.outputs.version }}.zip knx_doubleclick -x "*/__pycache__/*"
+          
+          cd ..
+          echo "✅ Created zip: knx_doubleclick_${{ steps.bump.outputs.version }}.zip"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           tag_name: ${{ steps.bump.outputs.version }}
           name: Release ${{ steps.bump.outputs.version }}
-          body: "New release created automatically from ${{ github.event.inputs.branch }}."
-          files: knx_doubleclick.zip
+          body: "New release ${{ steps.bump.outputs.version }} created automatically from ${{ github.event.inputs.branch }}."
+          files: knx_doubleclick_${{ steps.bump.outputs.version }}.zip
           draft: false
           prerelease: false
         env:
