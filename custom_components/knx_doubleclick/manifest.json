@@ -1,18 +1,18 @@
 {
   "domain": "knx_doubleclick",
   "name": "KNX Dubbelklicksdetektor",
-  "version": "0.8.17",
-  "documentation": "https://github.com/AlleHj/knx_doubleclick",
-  "issue_tracker": "https://github.com/AlleHj/knx_doubleclick/issues",
   "codeowners": [
     "@AlleHj"
   ],
-  "requirements": [],
+  "config_flow": true,
   "dependencies": [
     "knx",
     "http",
     "frontend"
   ],
+  "documentation": "https://github.com/AlleHj/knx_doubleclick",
   "iot_class": "local_push",
-  "config_flow": true
+  "issue_tracker": "https://github.com/AlleHj/knx_doubleclick/issues",
+  "requirements": [],
+  "version": "0.8.17"
 }
