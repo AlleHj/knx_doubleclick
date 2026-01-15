@@ -41,21 +41,17 @@ jobs:
 
       - name: Create Zip File
         run: |
-          # Gå in i custom_components för att zippa mappen knx_doubleclick
-          # Detta ger rätt mappstruktur inuti zip-filen för HACS
           cd custom_components
-          zip -r ../knx_doubleclick_${{ steps.version.outputs.version }}.zip knx_doubleclick
+          # Zippa mappen men exkludera skräpfiler
+          zip -r ../knx_doubleclick_${{ steps.version.outputs.version }}.zip knx_doubleclick -x "*/__pycache__/*"
           
-          # Gå tillbaka till roten och kolla storleken
           cd ..
           SIZE=$(du -h knx_doubleclick_${{ steps.version.outputs.version }}.zip | cut -f1)
           
           echo "---------------------------------------------------"
-          echo "✅ Created zip file: knx_doubleclick_${{ steps.version.outputs.version }}.zip"
-          echo "ℹ️ Version: ${{ steps.version.outputs.version }}"
+          echo "✅ Created clean zip: knx_doubleclick_${{ steps.version.outputs.version }}.zip"
           echo "📦 Size: $SIZE"
           echo "---------------------------------------------------"
-
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
