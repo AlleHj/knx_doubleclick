@@ -30,6 +30,6 @@ jobs:
           
           # KONFIGURATION
           PR_AGENT__CONFIG__PROVIDER: "litellm"
-          PR_AGENT__CONFIG__MODEL: "gemini/gemini-3-pro-preview"
+          PR_AGENT__CONFIG__MODEL: "gemini/gemini-1.5-pro"
           
           PR_AGENT__EXTRA_INSTRUCTIONS: "Focus on Home Assistant best practices, pythonic code, and avoiding blocking I/O in the event loop."
