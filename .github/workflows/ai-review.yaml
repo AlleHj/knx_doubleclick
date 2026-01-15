@@ -1,41 +1,42 @@
-# Version: 2.2.0 | Datum: 2026-01-15
-name: AI Code Review (Gemini)
-
-permissions:
-  contents: read
-  pull-requests: write
-  issues: write
-
+name: Gemini Code Review
 on:
   pull_request:
     types: [opened, reopened, ready_for_review, synchronize]
   issue_comment:
-    types: [created, edited]
+    types: [created]
 
 jobs:
-  pr_agent_job:
-    if: ${{ github.event.sender.type != 'Bot' && (github.event_name == 'pull_request' || github.event.issue.pull_request) }}
+  gemini_review:
     runs-on: ubuntu-latest
-    name: Run PR Agent
+    # Kör endast om det är en PR och inte en bot
+    if: ${{ github.event.sender.type != 'Bot' && (github.event_name == 'pull_request' || github.event.issue.pull_request) }}
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
     steps:
-      - name: PR Agent
-        uses: Codium-ai/pr-agent@main
+      - uses: actions/checkout@v4
+      
+      - name: "Run Gemini Code Review"
+        uses: google-github-actions/run-gemini-cli@v0.2.1
         env:
-          # API-nycklar
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GOOGLE_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          PR_NUMBER: ${{ github.event.pull_request.number || github.event.issue.number }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Här använder vi din nyckel direkt
+          gemini_api_key: ${{ secrets.GEMINI_API_KEY }}
+          gemini_model: "gemini-1.5-pro"
           
-          # KONFIGURATION - TVINGANDE
-          # Vi använder litellm för maximal flexibilitet
-          PR_AGENT__CONFIG__PROVIDER: "litellm"
-          
-          # Vi testar med Flash först då den är snabbast och mest kompatibel
-          PR_AGENT__CONFIG__MODEL: "gemini/gemini-1.5-flash"
-          
-          # VIKTIGT: Vi tömmer fallback-listan! 
-          # Detta tvingar agenten att visa det riktiga felet om Gemini misslyckas,
-          # istället för att försöka byta till OpenAI och ge felmeddelande om dummy-nycklar.
-          PR_AGENT__CONFIG__FALLBACK_MODELS: '[]'
-          
-          PR_AGENT__EXTRA_INSTRUCTIONS: "Focus on Home Assistant best practices."
+          # Detta kommando körs mot koden
+          prompt: |
+            You are an expert code reviewer. Review the changes in this Pull Request.
+            Focus on Home Assistant best practices and pythonic code.
+            
+            1. Summarize the changes.
+            2. Look for bugs or blocking I/O operations in the event loop.
+            3. Suggest improvements.
+            
+            Post your review as a comment on the Pull Request.
+            
+            DIFF TO REVIEW:
+            $ {{ github.event.pull_request.diff_url }}
