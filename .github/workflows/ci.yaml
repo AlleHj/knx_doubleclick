@@ -1,19 +1,23 @@
-# Version: 2.2.0 | Datum: 2026-01-15
-name: CI
+name: CI (Test Current & Next)
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [ "main", "master" ]
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [ "main", "master" ]
   workflow_dispatch:
+  
+  # Körs varje natt kl 01:00 UTC (ca 02:00/03:00 svensk tid)
+  schedule:
+    - cron: '0 1 * * *'
+
+env:
+  # --- KONFIGURATION: Ändra bara här för nya repon ---
+  COMPONENT: knx_doubleclick
+  # ---------------------------------------------------
 
 jobs:
-  # 1. Validera struktur, HACS-krav och skapa ZIP-paket
+  # 1. VALIDERAT & PAKETERA (Hassfest & HACS)
   validate:
     name: Validate & Package
     runs-on: ubuntu-latest
@@ -30,63 +34,44 @@ jobs:
           category: integration
           ignore: brands
 
-      # --- NYTT: Hämta version och skapa ZIP ---
+      # Skapar ZIP-filen för att se att det går att paketera
       - name: Get current version
         id: version
         run: |
-          # Läs ut versionen från manifest.json med jq
-          VERSION=$(jq -r '.version' custom_components/knx_doubleclick/manifest.json)
+          MANIFEST="custom_components/${{ env.COMPONENT }}/manifest.json"
+          VERSION=$(jq -r '.version' $MANIFEST)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Extracted version: $VERSION"
 
       - name: Create Zip File
         run: |
           cd custom_components
-          # Zippa mappen men exkludera skräpfiler
-          zip -r ../knx_doubleclick_${{ steps.version.outputs.version }}.zip knx_doubleclick -x "*/__pycache__/*"
-          
-          cd ..
-          SIZE=$(du -h knx_doubleclick_${{ steps.version.outputs.version }}.zip | cut -f1)
-          
-          echo "---------------------------------------------------"
-          echo "✅ Created clean zip: knx_doubleclick_${{ steps.version.outputs.version }}.zip"
-          echo "📦 Size: $SIZE"
-          echo "---------------------------------------------------"
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          # Detta namn kommer synas under 'Artifacts' i GitHub Actions summary
-          name: knx_doubleclick_v${{ steps.version.outputs.version }}
-          path: knx_doubleclick_${{ steps.version.outputs.version }}.zip
-      # -----------------------------------------
+          zip -r "../${{ env.COMPONENT }}_${{ steps.version.outputs.version }}.zip" "${{ env.COMPONENT }}" -x "*/__pycache__/*"
 
-  # 2. Linting (Kodstil och kvalitet)
+  # 2. LINT (Kollar kodstil)
   lint:
     name: Lint Code (Ruff)
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
-      - name: Install dependencies
+      - name: Install Ruff
         run: pip install ruff
-
       - name: Run Ruff
         run: ruff check .
 
-  # 3. Test Stable (MÅSTE fungera för att få mergea)
-  test-stable:
-    name: Test Stable (Python ${{ matrix.python-version }})
+  # 3. TEST CURRENT (Ska vara GRÖN för att få godkänt)
+  test-current:
+    name: Test Current (Stable)
     runs-on: ubuntu-latest
     needs: [validate, lint]
     strategy:
       fail-fast: false
       matrix:
+        # Testa mot de Python-versioner som nuvarande HA stöder
         python-version: ["3.12", "3.13"]
     steps:
       - name: Checkout
@@ -97,8 +82,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install dependencies
+      - name: Install dependencies (Stable)
         run: |
+          # Detta hämtar automatiskt den senaste STABILA versionen av HA
           pip install pytest pytest-homeassistant-custom-component
 
       - name: Run Tests
@@ -106,34 +92,38 @@ jobs:
           if [ -d "tests" ]; then
             pytest tests
           else
-            echo "No tests folder found - skipping pytest"
+            echo "No tests folder found - skipping"
           fi
 
-  # 4. Test Nightly (Varning för framtida fel)
-  test-nightly:
-    name: Test Nightly (Dev Branch)
+  # 4. TEST NEXT (Får vara RÖD/GUL utan att stoppa PR, men varnar på natten)
+  test-next:
+    name: Test Next (Dev/Future)
     runs-on: ubuntu-latest
     needs: [validate, lint]
-    continue-on-error: true # <-- VIKTIGT: Detta jobb får krascha utan att stoppa din PR
+    
+    # LOGIK: 
+    # Om det är natt (schedule) -> Måste lyckas (annars mail). 
+    # Om det är dag (push/pr) -> Får misslyckas (continue-on-error: true).
+    continue-on-error: ${{ github.event_name != 'schedule' }}
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Set up Python
+      - name: Set up Python (Latest)
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13" # Dev körs oftast bäst på senaste Python
+          python-version: "3.13" # Dev körs alltid bäst på senaste Python
 
-      - name: Install dependencies & HA Dev
+      - name: Install dependencies (Dev/Nightly)
         run: |
           sudo apt-get update
           sudo apt-get install -y libpcap-dev
-
-          # Installera test-ramverket först
+          
           pip install pytest pytest-homeassistant-custom-component
-
-          # TVINGA installation av senaste HA direkt från GitHub (Dev-branchen)
-          # --pre tillåter pre-releases, --upgrade tvingar uppdatering
+          
+          # TRICKET: Tvinga installation av HA direkt från GitHubs 'dev'-branch
+          echo "⚠️ Installing Home Assistant Dev/Nightly..."
           pip install git+https://github.com/home-assistant/core.git@dev --upgrade --force-reinstall
 
       - name: Run Tests
@@ -141,5 +131,5 @@ jobs:
           if [ -d "tests" ]; then
             pytest tests
           else
-            echo "No tests folder found - skipping pytest"
+            echo "No tests folder found - skipping"
           fi
