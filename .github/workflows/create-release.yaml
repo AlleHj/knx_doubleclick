@@ -6,7 +6,13 @@ on:
       branch:
         description: 'Branch to release from'
         required: true
-        default: 'master'
+        default: 'main'
+
+env:
+  # --- KONFIGURATION ---
+  # Ändra bara denna rad när du byter repo!
+  COMPONENT: knx_doubleclick
+  # ---------------------
 
 permissions:
   contents: write
@@ -24,30 +30,27 @@ jobs:
       - name: Bump Minor Version (y++) & Update README
         id: bump
         run: |
-          MANIFEST="custom_components/knx_doubleclick/manifest.json"
+          MANIFEST="custom_components/${{ env.COMPONENT }}/manifest.json"
           
-          # Läs nuvarande version
+          if [ ! -f "$MANIFEST" ]; then
+            echo "Error: Could not find manifest at $MANIFEST"
+            exit 1
+          fi
+          
           CURRENT_VERSION=$(jq -r '.version' $MANIFEST)
           echo "Current version: $CURRENT_VERSION"
           
           IFS='.' read -r major minor patch <<< "$CURRENT_VERSION"
           
-          # Öka y (minor) och nollställ z (patch)
           NEW_MINOR=$((minor + 1))
           NEW_VERSION="$major.$NEW_MINOR.0"
           
           echo "New Release Version: $NEW_VERSION"
           
-          # Uppdatera manifest.json
           jq --arg v "$NEW_VERSION" '.version = $v' $MANIFEST > tmp.$$.json && mv tmp.$$.json $MANIFEST
           
-          # Uppdatera README.md
-          # Byter ut den gamla versionssträngen mot den nya i badgen
           sed -i "s/version-$CURRENT_VERSION-blue.svg/version-$NEW_VERSION-blue.svg/g" README.md
           
-          echo "Updated README.md version badge to $NEW_VERSION"
-          
-          # Spara versionen till output för nästa steg
           echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
 
       - name: Commit and Push Version Bump
@@ -55,8 +58,7 @@ jobs:
           git config --global user.name "Release Bot"
           git config --global user.email "bot@noreply.github.com"
           
-          # Lägg till BÅDA filerna till committen
-          git add custom_components/knx_doubleclick/manifest.json
+          git add "custom_components/${{ env.COMPONENT }}/manifest.json"
           git add README.md
           
           git commit -m "Release ${{ steps.bump.outputs.version }}"
@@ -65,12 +67,12 @@ jobs:
       - name: Create Clean Zip File
         run: |
           cd custom_components
-          # Zippa mappen 'knx_doubleclick' men exkludera skräpfiler
-          # Vi döper filen med versionsnummer för tydlighet
-          zip -r ../knx_doubleclick_${{ steps.bump.outputs.version }}.zip knx_doubleclick -x "*/__pycache__/*"
+          
+          # Zippa mappen som heter samma som vår variabel
+          zip -r "../${{ env.COMPONENT }}_${{ steps.bump.outputs.version }}.zip" "${{ env.COMPONENT }}" -x "*/__pycache__/*"
           
           cd ..
-          echo "✅ Created zip: knx_doubleclick_${{ steps.bump.outputs.version }}.zip"
+          echo "✅ Created zip: ${{ env.COMPONENT }}_${{ steps.bump.outputs.version }}.zip"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
@@ -78,7 +80,7 @@ jobs:
           tag_name: ${{ steps.bump.outputs.version }}
           name: Release ${{ steps.bump.outputs.version }}
           body: "New release ${{ steps.bump.outputs.version }} created automatically from ${{ github.event.inputs.branch }}."
-          files: knx_doubleclick_${{ steps.bump.outputs.version }}.zip
+          files: ${{ env.COMPONENT }}_${{ steps.bump.outputs.version }}.zip
           draft: false
           prerelease: false
         env:
