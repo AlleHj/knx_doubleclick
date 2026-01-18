@@ -27,11 +27,11 @@
             "basic_options": "Konfigurera Inställningar",
             "edit_yaml": "Redigera Åtgärder (YAML)"
         },
-        "description": "Välj vad du vill göra för '{config_entry_name}'"
+        "description": "Välj vad du vill göra"
       },
       "basic_options": {
         "title": "KNX Dubbelklicksdetektor: Grundläggande",
-        "description": "Justera de grundläggande inställningarna för '{config_entry_name}'.\nFil: `{actions_file_path}`",
+        "description": "Justera de grundläggande inställningarna.\nFil: `{actions_file_path}`",
         "data": {
           "knx_group_address": "KNX Gruppadress att lyssna på",
           "knx_value": "KNX Värde att reagera på",
