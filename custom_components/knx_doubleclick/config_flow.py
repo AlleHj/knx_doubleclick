@@ -115,12 +115,16 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
         """
         # user_input används inte här eftersom vi visar en meny direkt.
         # pylint: disable=unused-argument
+        config_entry_name = self.config_entry.title or self.config_entry.data.get(CONF_NAME_SUFFIX, "Okänd")
         return self.async_show_menu(
             step_id="init",
             menu_options=[
                 "basic_options",
                 "edit_yaml"
-            ]
+            ],
+            description_placeholders={
+                "config_entry_name": config_entry_name
+            }
         )
 
     async def async_step_basic_options(
