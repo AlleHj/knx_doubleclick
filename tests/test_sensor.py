@@ -5,7 +5,6 @@ from datetime import timedelta
 from unittest.mock import MagicMock, patch, AsyncMock
 
 import pytest
-from homeassistant.core import HomeAssistant
 from homeassistant.util import dt as dt_util
 
 from custom_components.knx_doubleclick.sensor import KnxDoubleClickSensor
@@ -13,8 +12,7 @@ from custom_components.knx_doubleclick.const import (
     CONF_KNX_GROUP_ADDRESS,
     CONF_KNX_VALUE,
     CONF_DOUBLE_CLICK_WINDOW_SECONDS,
-    CONF_NAME_SUFFIX,
-    DEFAULT_NAME_SUFFIX
+    CONF_NAME_SUFFIX
 )
 
 # Fixtur för mockad config entry
