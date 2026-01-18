@@ -11,16 +11,19 @@
 DOMAIN = "knx_doubleclick"
 
 # Plattformar
-PLATFORMS = ["sensor"]
+PLATFORMS = ["binary_sensor"]
 
 # Konfigurationsnycklar
 CONF_NAME_SUFFIX = "name_suffix"
-CONF_KNX_GROUP_ADDRESS = "knx_group_address"
-CONF_KNX_VALUE = "knx_value"
+CONF_KNX_GROUP_ADDRESS = "knx_group_address" # Deprecated/Legacy
+CONF_SOURCE_ENTITY = "source_entity"
+CONF_KNX_VALUE = "knx_value" # Deprecated/Legacy
+CONF_TRIGGER_VALUE = "trigger_value"
 CONF_DOUBLE_CLICK_WINDOW_SECONDS = "double_click_window_seconds"
 
 # Standardvärden
 DEFAULT_KNX_VALUE = 1
+DEFAULT_TRIGGER_VALUE = "on"
 DEFAULT_DOUBLE_CLICK_WINDOW_SECONDS = 0.7
 DEFAULT_NAME_SUFFIX = "Min Knapp"
 
@@ -35,16 +38,71 @@ DEFAULT_ACTIONS_FILE_CONTENT = """#---------------------------------------------
 # Lägg till dina önskade Home Assistant-åtgärder i YAML-format nedan.
 #---------------------------------------------------------------------------
 
-# Exempel: Tänd en switch
+# --- Grundläggande Exempel: Styr en specifik enhet ---
+# Detta exempel tänder en specifik lampa eller switch.
+# Ersätt 'switch.min_switch_entitet' med ditt eget entity_id.
+#
 # - service: switch.turn_on
 #   target:
 #     entity_id: switch.min_switch_entitet
+
+
+# --- Exempel: Använda Etiketter (Labels) ---
+# Du kan styra flera enheter samtidigt genom att använda etiketter (Labels).
+# 1. Skapa en etikett i Home Assistant (Inställningar -> Etiketter).
+# 2. Tilldela etiketten till de enheter du vill styra (t.ex. alla fönsterlampor).
+# 3. Använd 'label_id' i 'target' sektionen.
+#
+# Exempel: Tänd alla enheter som har etiketten 'kvallsbelysning'.
+#
+# - service: light.turn_on
+#   target:
+#     label_id: kvallsbelysning
+
+
+# --- Exempel: Använda Områden (Areas) ---
+# På samma sätt kan du styra alla enheter i ett specifikt rum/område.
+#
+# Exempel: Släck allt i vardagsrummet.
+#
+# - service: light.turn_off
+#   target:
+#     area_id: vardagsrum
+
+
+# --- Exempel: Avancerad Script-logik ---
+# Du kan använda villkor och annan script-logik.
+#
+# Exempel: Tänd lampan endast om solen har gått ner.
+#
+# - condition: state
+#   entity_id: sun.sun
+#   state: "below_horizon"
+# - service: light.turn_on
+#   target:
+#     entity_id: light.hallen
+
+
+# --- Exempel: Använda Templates och Variabler ---
+# Du har tillgång till följande variabler i templates:
+# {{ trigger.name }}            - Namnet på knappen (från inställningar)
+# {{ trigger.group_address }}   - KNX Gruppadressen
+# {{ trigger.value }}           - Värdet som skickades (t.ex. 1)
+# {{ trigger.time_difference_seconds }} - Tid mellan klick
+#
+# Exempel: Skicka en notis med namnet på knappen.
+#
+# - service: notify.persistent_notification
+#   data:
+#     message: "Dubbelklick på {{ trigger.name }}!"
 """
 
 # Attribut
 ATTR_LAST_CLICK_TIME = "last_click_time"
 ATTR_KNX_GROUP_ADDRESS = "knx_group_address"
+ATTR_SOURCE_ENTITY = "source_entity"
 ATTR_KNX_LISTEN_VALUE = "knx_listen_value"
+ATTR_TRIGGER_VALUE = "trigger_value"
 ATTR_DOUBLE_CLICK_WINDOW = "double_click_window_seconds"
 ATTR_ACTIONS_FILE_PATH = "actions_file_path"
 ATTR_LAST_TIME_DIFFERENCE = "last_time_difference_seconds"
@@ -59,3 +117,9 @@ COMPLEX_ACTION_KEYS = [
 # Felnycklar
 ERROR_CANNOT_READ_ACTIONS_FILE = "cannot_read_actions_file"
 ERROR_CANNOT_WRITE_ACTIONS_FILE = "cannot_write_actions_file"
+ERROR_INVALID_YAML = "invalid_yaml"
+
+# Menyval
+CONF_MENU_OPTION_SETTINGS = "settings"
+CONF_MENU_OPTION_YAML = "yaml_editor"
+CONF_YAML_CONTENT = "yaml_content"
