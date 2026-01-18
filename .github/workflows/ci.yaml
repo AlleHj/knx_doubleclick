@@ -7,48 +7,47 @@ on:
     branches: [ "main", "master" ]
   workflow_dispatch:
 
+  # Körs varje natt kl 01:00 UTC (ca 02:00/03:00 svensk tid)
+  schedule:
+    - cron: '0 1 * * *'
+
 env:
+  # --- KONFIGURATION: Ändra bara här för nya repon ---
   COMPONENT: knx_doubleclick
+  # ---------------------------------------------------
 
 jobs:
+  # 1. VALIDERAT & PAKETERA (Hassfest & HACS)
   validate:
     name: Validate & Package
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-      
+
       - name: Hassfest Validation
         uses: home-assistant/actions/hassfest@master
-      
+
       - name: HACS Validation
         uses: hacs/action@main
         with:
           category: integration
           ignore: brands
-      
+
+      # Skapar ZIP-filen för att se att det går att paketera
       - name: Get current version
         id: version
         run: |
           MANIFEST="custom_components/${{ env.COMPONENT }}/manifest.json"
           VERSION=$(jq -r '.version' $MANIFEST)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
-      
+
       - name: Create Zip File
         run: |
           cd custom_components
-          # Zippa mappen och lägg den i roten (../)
           zip -r "../${{ env.COMPONENT }}_${{ steps.version.outputs.version }}.zip" "${{ env.COMPONENT }}" -x "*/__pycache__/*"
 
-      # --- HÄR ÄR TILLÄGGET: Ladda upp filen ---
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: ${{ env.COMPONENT }}_${{ steps.version.outputs.version }}
-          path: ${{ env.COMPONENT }}_${{ steps.version.outputs.version }}.zip
-          if-no-files-found: error
-          retention-days: 7 # Sparar filen i 7 dagar
-
+  # 2. LINT (Kollar kodstil)
   lint:
     name: Lint Code (Ruff)
     runs-on: ubuntu-latest
@@ -61,10 +60,10 @@ jobs:
           python-version: "3.12"
       - name: Install Ruff
         run: pip install ruff
-      # --format=github gör att varningar syns snyggt i "Files Changed" fliken på en PR
       - name: Run Ruff
-        run: ruff check . --output-format=github
+        run: ruff check .
 
+  # 3. TEST CURRENT (Ska vara GRÖN för att få godkänt)
   test-current:
     name: Test Current (Stable)
     runs-on: ubuntu-latest
@@ -72,61 +71,65 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        # Testa mot de Python-versioner som nuvarande HA stöder
         python-version: ["3.12", "3.13"]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+
       - name: Install dependencies (Stable)
         run: |
+          # Detta hämtar automatiskt den senaste STABILA versionen av HA
           pip install pytest pytest-homeassistant-custom-component
-          if [ -f requirements_test.txt ]; then pip install -r requirements_test.txt; fi
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
       - name: Run Tests
         run: |
           if [ -d "tests" ]; then
             pytest tests
-            exit 0
+          else
+            echo "No tests folder found - skipping"
           fi
-          if [ -d "custom_components/${{ env.COMPONENT }}/tests" ]; then
-            pytest "custom_components/${{ env.COMPONENT }}/tests"
-            exit 0
-          fi
-          echo "⚠️ Inga tester hittades. Hoppar över test-steget."
-          exit 0
 
+  # 4. TEST NEXT (Får vara RÖD/GUL utan att stoppa PR, men varnar på natten)
   test-next:
     name: Test Next (Dev/Future)
     runs-on: ubuntu-latest
     needs: [validate, lint]
-    continue-on-error: true
+
+    # LOGIK:
+    # Om det är natt (schedule) -> Måste lyckas (annars mail).
+    # Om det är dag (push/pr) -> Får misslyckas (continue-on-error: true).
+    continue-on-error: ${{ github.event_name != 'schedule' }}
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Set up Python (Latest)
         uses: actions/setup-python@v5
         with:
-          python-version: "3.13"
+          python-version: "3.13" # Dev körs alltid bäst på senaste Python
+
       - name: Install dependencies (Dev/Nightly)
         run: |
           sudo apt-get update
           sudo apt-get install -y libpcap-dev
+
           pip install pytest pytest-homeassistant-custom-component
-          if [ -f requirements_test.txt ]; then pip install -r requirements_test.txt; fi
-          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+          # TRICKET: Tvinga installation av HA direkt från GitHubs 'dev'-branch
+          echo "⚠️ Installing Home Assistant Dev/Nightly..."
           pip install git+https://github.com/home-assistant/core.git@dev --upgrade --force-reinstall
+
       - name: Run Tests
         run: |
           if [ -d "tests" ]; then
             pytest tests
-            exit 0
+          else
+            echo "No tests folder found - skipping"
           fi
-          if [ -d "custom_components/${{ env.COMPONENT }}/tests" ]; then
-            pytest "custom_components/${{ env.COMPONENT }}/tests"
-            exit 0
-          fi
-          echo "⚠️ Inga tester hittades. Hoppar över test-steget."
-          exit 0
