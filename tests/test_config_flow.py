@@ -58,6 +58,11 @@ async def test_options_flow_init_menu(mock_hass, mock_config_entry):
     assert "basic_options" in result["menu_options"]
     assert "edit_yaml" in result["menu_options"]
 
+    # Verifiera att placeholders skickas med för att fixa UI-buggen
+    assert "description_placeholders" in result
+    assert "config_entry_name" in result["description_placeholders"]
+    assert result["description_placeholders"]["config_entry_name"] == "Test Knapp"
+
 
 @pytest.mark.asyncio
 async def test_options_flow_edit_yaml_load(mock_hass, mock_config_entry):
