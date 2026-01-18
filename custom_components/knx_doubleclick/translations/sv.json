@@ -27,7 +27,7 @@
             "basic_options": "Konfigurera Inställningar",
             "edit_yaml": "Redigera Åtgärder (YAML)"
         },
-        "description": "Välj vad du vill göra"
+        "description": "Välj vad du vill göra för '{config_entry_name}'"
       },
       "basic_options": {
         "title": "KNX Dubbelklicksdetektor: Grundläggande",

@@ -104,7 +104,10 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
     """Hanterar ändringar av inställningar (kugghjulet)."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry):
-        pass
+        """Initialisera options flow."""
+        # Vi sätter _config_entry direkt för att undvika property-settern som kastar fel i nyare HA
+        # och för att garantera att den sätts även om OptionsFlow.__init__ saknas i miljön.
+        self._config_entry = config_entry
 
     async def async_step_init(
         self, user_input: Optional[Dict[str, Any]] = None
