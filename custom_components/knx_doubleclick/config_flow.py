@@ -84,8 +84,8 @@ class KnxDoubleClickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         data_schema = vol.Schema(
             {
-                vol.Required(CONF_NAME_SUFFIX, default=DEFAULT_NAME_SUFFIX): cv.string,
                 vol.Required(CONF_KNX_GROUP_ADDRESS): cv.string,
+                vol.Required(CONF_NAME_SUFFIX, default=DEFAULT_NAME_SUFFIX): cv.string,
                 vol.Required(CONF_KNX_VALUE, default=DEFAULT_KNX_VALUE): vol.Coerce(int),
                 vol.Required(
                     CONF_DOUBLE_CLICK_WINDOW_SECONDS,

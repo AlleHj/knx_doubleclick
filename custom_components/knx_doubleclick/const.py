@@ -78,6 +78,20 @@ DEFAULT_ACTIONS_FILE_CONTENT = """#---------------------------------------------
 # - service: light.turn_on
 #   target:
 #     entity_id: light.hallen
+
+
+# --- Exempel: Använda Templates och Variabler ---
+# Du har tillgång till följande variabler i templates:
+# {{ trigger.name }}            - Namnet på knappen (från inställningar)
+# {{ trigger.group_address }}   - KNX Gruppadressen
+# {{ trigger.value }}           - Värdet som skickades (t.ex. 1)
+# {{ trigger.time_difference_seconds }} - Tid mellan klick
+#
+# Exempel: Skicka en notis med namnet på knappen.
+#
+# - service: notify.persistent_notification
+#   data:
+#     message: "Dubbelklick på {{ trigger.name }}!"
 """
 
 # Attribut

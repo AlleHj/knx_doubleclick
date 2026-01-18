@@ -5,7 +5,7 @@
         "title": "KNX Dubbelklicksdetektor: Ny Lyssnare",
         "description": "Konfigurera en ny lyssnare för KNX dubbelklick. Ett unikt namnsuffix hjälper dig att identifiera denna instans och dess entiteter. Åtgärder konfigureras i en separat YAML-fil som skapas automatiskt i mappen 'config/knx_doubleclick_actions/'.",
         "data": {
-          "name_suffix": "Unikt Namnsuffix (t.ex. 'Vardagsrum Tak', blir del av entitets-ID)",
+          "name_suffix": "Namn (t.ex. 'Vardagsrum Tak', blir del av entitets-ID)",
           "knx_group_address": "KNX Gruppadress att lyssna på (t.ex. 1/1/1)",
           "knx_value": "KNX Värde att reagera på (t.ex. 1 för påslag)",
           "double_click_window_seconds": "Tidsfönster för dubbelklick (t.ex. 0.7 i sekunder)"

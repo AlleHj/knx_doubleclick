@@ -554,12 +554,12 @@ class KnxDoubleClickSensor(SensorEntity):
             template_variables = {
                 "trigger": {
                     "platform": "knx_doubleclick",
+                    "name": name_suffix,
                     "group_address": self._knx_group_address,
                     "value": context_data["value"],
                     "event_time_utc": context_data["time"].isoformat(),
                     "event_time_local": dt_util.as_local(context_data["time"]).isoformat(),
-                    "time_difference_seconds": context_data["diff"],
-                    "name_suffix": name_suffix
+                    "time_difference_seconds": context_data["diff"]
                 },
                 "config_entry_name": self.config_entry.title,
                 "actions_file": self._actions_file_path

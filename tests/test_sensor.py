@@ -139,3 +139,48 @@ async def test_double_click_success(mock_hass, mock_config_entry):
             # Data och target kan variera beroende på implementering, men vi kollar kwargs
             assert "target" in kwargs
             assert kwargs["target"] == {"entity_id": "light.test"}
+
+@pytest.mark.asyncio
+async def test_template_variables_in_script(mock_hass, mock_config_entry):
+    """
+    Testar att template-variabler skickas korrekt till script-motorn.
+    """
+    # Setup
+    sensor = KnxDoubleClickSensor(mock_hass, mock_config_entry, "Test Sensor")
+    mock_hass.async_add_executor_job = AsyncMock(return_value=True)
+    sensor.async_write_ha_state = MagicMock()
+
+    await sensor.async_added_to_hass()
+
+    # Mocka Script-klassen (vi vill inte köra riktiga scripts utan se vad som skickas in)
+    with patch("custom_components.knx_doubleclick.sensor.Script") as mock_script_cls:
+        mock_script_instance = mock_script_cls.return_value
+        mock_script_instance.async_run = AsyncMock()
+
+        # En komplex åtgärd tvingar fram användning av Script
+        actions = [{"condition": "template", "value_template": "{{ trigger.value == 1 }}"}]
+
+        with patch.object(sensor, "_load_parsed_actions_from_file", new_callable=AsyncMock, return_value=actions):
+            now = dt_util.utcnow()
+            with patch("homeassistant.util.dt.utcnow", return_value=now):
+                event = MagicMock()
+                event.data = {"destination": "1/1/1", "value": 1}
+
+                # Simulera två klick snabbt för att trigga logiken
+                await sensor._async_handle_knx_event(event) # Första
+                await sensor._async_handle_knx_event(event) # Andra
+
+        # Assert
+        mock_script_instance.async_run.assert_called()
+        call_args = mock_script_instance.async_run.call_args
+        run_variables = call_args.kwargs.get("run_variables")
+
+        assert run_variables is not None
+        assert "trigger" in run_variables
+        trigger = run_variables["trigger"]
+        assert trigger["platform"] == "knx_doubleclick"
+        assert trigger["name"] == "Test"
+        assert trigger["group_address"] == "1/1/1"
+        assert trigger["value"] == 1
+        assert "event_time_utc" in trigger
+        assert "time_difference_seconds" in trigger
