@@ -19,6 +19,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.script import SCRIPT_MODE_SINGLE, Script
+import homeassistant.helpers.config_validation as cv
 from homeassistant.util import slugify
 
 from .const import (
@@ -232,9 +233,14 @@ class KnxDoubleClickSensor(SensorEntity):
         if not parsed_actions:
             return None
         try:
+            # Validera och normalisera åtgärderna enligt HA script schema
+            # Detta löser problem med t.ex. 'service' vs 'service_template'
+            validated_actions = cv.SCRIPT_SCHEMA(parsed_actions)
+            print(f"DEBUG: Validated actions: {validated_actions}") # DEBUG
+
             script_runner = Script(
                 self.hass,
-                parsed_actions,
+                validated_actions,
                 f"{self.name} Dubbelklick Åtgärd (från fil)",
                 DOMAIN,
                 script_mode=SCRIPT_MODE_SINGLE,
@@ -243,6 +249,7 @@ class KnxDoubleClickSensor(SensorEntity):
             _LOGGER.debug("Åtgärder kompilerade för %s. Antal åtgärder: %d", self.name, len(parsed_actions))
             return script_runner
         except Exception as e: # pylint: disable=broad-exception-caught
+            print(f"DEBUG: Exception in compile script: {e}") # DEBUG
             _LOGGER.error(
                 "Oväntat fel vid kompilering av skript för %s från parsade åtgärder: %s",
                 self.name, e, exc_info=True
@@ -571,6 +578,7 @@ class KnxDoubleClickSensor(SensorEntity):
                     context=script_context
                 )
             except Exception as e:
+                print(f"DEBUG: Exception in async_run: {e}") # DEBUG
                 _LOGGER.error("Fel vid körning av Script-hjälparen för %s: %s", self.name, e, exc_info=True)
         else:
             _LOGGER.warning(
