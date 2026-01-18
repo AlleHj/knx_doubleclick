@@ -24,14 +24,14 @@
     "step": {
       "init": {
         "menu_options": {
-          "basic_options": "Konfigurera Inställningar",
-          "edit_yaml": "Redigera Åtgärder (YAML)"
+            "basic_options": "Konfigurera Inställningar",
+            "edit_yaml": "Redigera Åtgärder (YAML)"
         },
         "description": "Välj vad du vill göra"
       },
       "basic_options": {
         "title": "KNX Dubbelklicksdetektor: Grundläggande",
-        "description": "Justera de grundläggande inställningarna.\nFil: `{actions_file_path}`",
+        "description": "Justera de grundläggande inställningarna för '{config_entry_name}'.\nFil: `{actions_file_path}`",
         "data": {
           "knx_group_address": "KNX Gruppadress att lyssna på",
           "knx_value": "KNX Värde att reagera på",
@@ -39,18 +39,18 @@
         }
       },
       "edit_yaml": {
-        "title": "Redigera YAML Åtgärder",
-        "description": "Här kan du redigera åtgärderna direkt.\nFil: `{actions_file_path}`",
-        "data": {
-          "yaml_content": "YAML Innehåll"
-        }
+          "title": "Redigera YAML Åtgärder",
+          "description": "Här kan du redigera åtgärderna direkt.\nFil: `{actions_file_path}`",
+          "data": {
+              "yaml_content": "YAML Innehåll"
+          }
       }
     },
     "error": {
-      "unknown_option_error": "Ett okänt fel uppstod vid hantering av optioner.",
-      "invalid_yaml": "Ogiltig YAML-syntax. Kontrollera din kod.",
-      "cannot_write_actions_file": "Kunde inte spara filen. Kontrollera behörigheter.",
-      "cannot_read_actions_file": "Kunde inte läsa filen."
+        "unknown_option_error": "Ett okänt fel uppstod vid hantering av optioner.",
+        "invalid_yaml": "Ogiltig YAML-syntax. Kontrollera din kod.",
+        "cannot_write_actions_file": "Kunde inte spara filen. Kontrollera behörigheter.",
+        "cannot_read_actions_file": "Kunde inte läsa filen."
     }
   }
 }
