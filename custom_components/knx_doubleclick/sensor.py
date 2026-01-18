@@ -496,25 +496,31 @@ class KnxDoubleClickSensor(SensorEntity):
         # pylint: disable=broad-exception-caught
         service_call_str = str(action_dict["service"])
         service_data = action_dict.get("data", {}).copy()
-        target_data = action_dict.get("target", {})
+        target_data = action_dict.get("target")
 
-        if isinstance(target_data, dict):
-            service_data.update(target_data)
-        elif isinstance(target_data, str) and "entity_id" not in service_data:
-            service_data["entity_id"] = target_data
+        final_target = None
+        if target_data:
+            if isinstance(target_data, dict):
+                final_target = target_data
+            elif isinstance(target_data, str):
+                final_target = {"entity_id": target_data}
 
-        if "entity_id" in action_dict and "entity_id" not in service_data:
-            service_data["entity_id"] = action_dict["entity_id"]
+        # Hantera entity_id på toppnivå (legacy)
+        if "entity_id" in action_dict:
+            if final_target is None:
+                final_target = {}
+            if "entity_id" not in final_target:
+                final_target["entity_id"] = action_dict["entity_id"]
 
         try:
             domain, service_name = service_call_str.split(".", 1)
             _LOGGER.info(
-                "Utför direkt serviceanrop %d/%d för %s: Domän=%s, Tjänst=%s, Data=%s",
-                index + 1, total_actions, self.name, domain, service_name, service_data
+                "Utför direkt serviceanrop %d/%d för %s: Domän=%s, Tjänst=%s, Data=%s, Target=%s",
+                index + 1, total_actions, self.name, domain, service_name, service_data, final_target
             )
             await self.hass.services.async_call(
                 domain, service_name, service_data,
-                blocking=True, context=Context()
+                blocking=True, context=Context(), target=final_target
             )
             _LOGGER.info("Direkt serviceanrop %d/%d för %s lyckades.", index + 1, total_actions, self.name)
             return True

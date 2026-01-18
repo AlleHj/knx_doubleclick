@@ -35,10 +35,49 @@ DEFAULT_ACTIONS_FILE_CONTENT = """#---------------------------------------------
 # Lägg till dina önskade Home Assistant-åtgärder i YAML-format nedan.
 #---------------------------------------------------------------------------
 
-# Exempel: Tänd en switch
+# --- Grundläggande Exempel: Styr en specifik enhet ---
+# Detta exempel tänder en specifik lampa eller switch.
+# Ersätt 'switch.min_switch_entitet' med ditt eget entity_id.
+#
 # - service: switch.turn_on
 #   target:
 #     entity_id: switch.min_switch_entitet
+
+
+# --- Exempel: Använda Etiketter (Labels) ---
+# Du kan styra flera enheter samtidigt genom att använda etiketter (Labels).
+# 1. Skapa en etikett i Home Assistant (Inställningar -> Etiketter).
+# 2. Tilldela etiketten till de enheter du vill styra (t.ex. alla fönsterlampor).
+# 3. Använd 'label_id' i 'target' sektionen.
+#
+# Exempel: Tänd alla enheter som har etiketten 'kvallsbelysning'.
+#
+# - service: light.turn_on
+#   target:
+#     label_id: kvallsbelysning
+
+
+# --- Exempel: Använda Områden (Areas) ---
+# På samma sätt kan du styra alla enheter i ett specifikt rum/område.
+#
+# Exempel: Släck allt i vardagsrummet.
+#
+# - service: light.turn_off
+#   target:
+#     area_id: vardagsrum
+
+
+# --- Exempel: Avancerad Script-logik ---
+# Du kan använda villkor och annan script-logik.
+#
+# Exempel: Tänd lampan endast om solen har gått ner.
+#
+# - condition: state
+#   entity_id: sun.sun
+#   state: "below_horizon"
+# - service: light.turn_on
+#   target:
+#     entity_id: light.hallen
 """
 
 # Attribut

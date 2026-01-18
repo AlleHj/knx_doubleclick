@@ -10,6 +10,7 @@
 # - Loopar (repeat)
 # - Väntan (wait_for_trigger)
 # - Parallell exekvering
+# - Etiketter (labels) och områden (areas)
 #---------------------------------------------------------------------------
 
 # Exempel 1: Tänd lampan endast om det är mörkt ute (baserat på solens position)
@@ -30,7 +31,19 @@
   data:
     message: "Hallen togglades precis!"
 
-# Exempel 3: Avancerad logik med 'choose' (switch/case)
+# Exempel 3: Styrning med Etiketter (Labels)
+# Tänd alla lampor märkta med 'kvällsbelysning'
+- service: light.turn_on
+  target:
+    label_id: kvallsbelysning
+
+# Exempel 4: Styrning med Områden (Areas)
+# Släck allt i köket
+- service: homeassistant.turn_off
+  target:
+    area_id: koket
+
+# Exempel 5: Avancerad logik med 'choose' (switch/case)
 - choose:
     # Alternativ 1: Om TV:n är på -> Släck ljuset (bioläge)
     - conditions:
@@ -61,7 +74,7 @@
       target:
         entity_id: scene.kvallsbelysning
 
-# Exempel 4: Loopa en blinkning
+# Exempel 6: Loopa en blinkning
 - repeat:
     count: 3
     sequence:
