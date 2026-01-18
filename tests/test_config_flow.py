@@ -75,8 +75,6 @@ async def test_options_flow_edit_yaml_load(mock_hass, mock_config_entry):
     """
 
     flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
-    flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
-    flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
     flow.hass = mock_hass
     flow.handler = mock_config_entry.entry_id
 
@@ -107,7 +105,6 @@ async def test_options_flow_edit_yaml_save_valid(mock_hass, mock_config_entry):
     Assert: Verifiera att os.replace anropas (atomärt sparande) och att flödet avslutas (CREATE_ENTRY).
     """
 
-    flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
     flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
     flow.hass = mock_hass
     flow.handler = mock_config_entry.entry_id
