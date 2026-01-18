@@ -1,0 +1,75 @@
+#---------------------------------------------------------------------------
+# Avancerat Exempel för KNX Dubbelklicksdetektor
+#---------------------------------------------------------------------------
+# Detta exempel demonstrerar hur du kan använda komplex logik
+# (Home Assistant Scripts syntax) direkt i din åtgärdsfil.
+#
+# Funktioner som visas:
+# - Villkor (condition)
+# - Val (choose)
+# - Loopar (repeat)
+# - Väntan (wait_for_trigger)
+# - Parallell exekvering
+#---------------------------------------------------------------------------
+
+# Exempel 1: Tänd lampan endast om det är mörkt ute (baserat på solens position)
+- alias: "Tänd om mörkt"
+  condition:
+    - condition: state
+      entity_id: sun.sun
+      state: "below_horizon"
+  service: light.turn_on
+  target:
+    entity_id: light.vardagsrum_tak
+
+# Exempel 2: Toggle-funktion med notifiering
+- service: light.toggle
+  target:
+    entity_id: light.hallen
+- service: notify.mobile_app_min_mobil
+  data:
+    message: "Hallen togglades precis!"
+
+# Exempel 3: Avancerad logik med 'choose' (switch/case)
+- choose:
+    # Alternativ 1: Om TV:n är på -> Släck ljuset (bioläge)
+    - conditions:
+        - condition: state
+          entity_id: media_player.tv
+          state: "on"
+      sequence:
+        - service: light.turn_off
+          target:
+            area_id: vardagsrum
+        - service: scene.turn_on
+          target:
+            entity_id: scene.biolage
+
+    # Alternativ 2: Om ingen är hemma -> Skicka larm
+    - conditions:
+        - condition: state
+          entity_id: zone.home
+          state: "0"
+      sequence:
+        - service: notify.notify
+          data:
+            message: "Någon dubbelklickade men ingen är hemma!"
+
+  # Default: Tänd mysbelysning
+  default:
+    - service: scene.turn_on
+      target:
+        entity_id: scene.kvallsbelysning
+
+# Exempel 4: Loopa en blinkning
+- repeat:
+    count: 3
+    sequence:
+      - service: light.turn_on
+        target:
+          entity_id: light.varningslampa
+      - delay: "00:00:01"
+      - service: light.turn_off
+        target:
+          entity_id: light.varningslampa
+      - delay: "00:00:01"

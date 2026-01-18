@@ -13,7 +13,7 @@ from functools import partial
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN, PLATFORMS, ACTIONS_DIR_BASENAME
+from .const import ACTIONS_DIR_BASENAME, DOMAIN, PLATFORMS
 
 _LOGGER = logging.getLogger(__name__)
 

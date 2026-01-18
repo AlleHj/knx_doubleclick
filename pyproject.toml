@@ -1,0 +1,16 @@
+[tool.ruff]
+select = ["E", "F", "W", "B", "I"]
+line-length = 120
+target-version = "py312"
+
+[tool.pylint.messages_control]
+disable = [
+    "C0114", # missing-module-docstring (we enforce it but pylint can be annoying)
+    "C0115", # missing-class-docstring
+    "C0116", # missing-function-docstring
+    "R0903", # too-few-public-methods
+]
+# We will manually ensure docstrings are present as per instructions.
+
+[tool.pylint.format]
+max-line-length = 120

@@ -59,3 +59,9 @@ COMPLEX_ACTION_KEYS = [
 # Felnycklar
 ERROR_CANNOT_READ_ACTIONS_FILE = "cannot_read_actions_file"
 ERROR_CANNOT_WRITE_ACTIONS_FILE = "cannot_write_actions_file"
+ERROR_INVALID_YAML = "invalid_yaml"
+
+# Menyval
+CONF_MENU_OPTION_SETTINGS = "settings"
+CONF_MENU_OPTION_YAML = "yaml_editor"
+CONF_YAML_CONTENT = "yaml_content"
