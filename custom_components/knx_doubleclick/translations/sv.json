@@ -5,7 +5,7 @@
         "title": "KNX Dubbelklicksdetektor: Ny Lyssnare",
         "description": "Konfigurera en ny lyssnare för KNX dubbelklick. Ett unikt namnsuffix hjälper dig att identifiera denna instans och dess entiteter. Åtgärder konfigureras i en separat YAML-fil som skapas automatiskt i mappen 'config/knx_doubleclick_actions/'.",
         "data": {
-          "name_suffix": "Unikt Namnsuffix (t.ex. 'Vardagsrum Tak', blir del av entitets-ID)",
+          "name_suffix": "Namn (t.ex. 'Vardagsrum Tak', blir del av entitets-ID)",
           "knx_group_address": "KNX Gruppadress att lyssna på (t.ex. 1/1/1)",
           "knx_value": "KNX Värde att reagera på (t.ex. 1 för påslag)",
           "double_click_window_seconds": "Tidsfönster för dubbelklick (t.ex. 0.7 i sekunder)"
@@ -22,6 +22,13 @@
   },
   "options": {
     "step": {
+      "init": {
+        "menu_options": {
+            "basic_options": "Konfigurera Inställningar",
+            "edit_yaml": "Redigera Åtgärder (YAML)"
+        },
+        "description": "Välj vad du vill göra för '{config_entry_name}'"
+      },
       "basic_options": {
         "title": "KNX Dubbelklicksdetektor: Grundläggande",
         "description": "Justera de grundläggande inställningarna för '{config_entry_name}'.\nFil: `{actions_file_path}`",
@@ -30,10 +37,20 @@
           "knx_value": "KNX Värde att reagera på",
           "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)"
         }
+      },
+      "edit_yaml": {
+          "title": "Redigera YAML Åtgärder",
+          "description": "Här kan du redigera åtgärderna direkt.\nFil: `{actions_file_path}`",
+          "data": {
+              "yaml_content": "YAML Innehåll"
+          }
       }
     },
     "error": {
-        "unknown_option_error": "Ett okänt fel uppstod vid hantering av optioner."
+        "unknown_option_error": "Ett okänt fel uppstod vid hantering av optioner.",
+        "invalid_yaml": "Ogiltig YAML-syntax. Kontrollera din kod.",
+        "cannot_write_actions_file": "Kunde inte spara filen. Kontrollera behörigheter.",
+        "cannot_read_actions_file": "Kunde inte läsa filen."
     }
   }
 }

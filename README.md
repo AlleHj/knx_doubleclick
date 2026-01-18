@@ -16,8 +16,10 @@ Denna integration är byggd för stabilitet och prestanda, med stöd för både 
 * **Passiv Avlyssning:** Reagerar direkt på telegram från KNX-bussen utan "polling".
 * **Instans-baserad:** Skapa en unik detektor för varje knapp via UI.
 * **Separerade Åtgärder:** Logik definieras i dedikerade YAML-filer för överskådlighet.
+* **Redigera direkt i UI:** Du kan nu redigera dina åtgärdsfiler (YAML) direkt via integrationens inställningar (Options Flow).
 * **Template-stöd:** Använd variabler som `{{ time_difference_seconds }}` eller `{{ config_entry_name }}` i dina åtgärder.
 * **Smart Exekvering:** Väljer automatiskt mellan snabba direktanrop eller `script`-motorn beroende på komplexitet.
+* **Stöd för Labels och Areas:** Styr flera enheter samtidigt genom att använda Home Assistants `label_id` eller `area_id`.
 
 ## 🚀 Installation
 
@@ -43,10 +45,9 @@ Integrationen konfigureras uteslutande via **Enheter & Tjänster** i Home Assist
 
 ## 📝 Definiera Åtgärder (YAML)
 
-När en integration skapas, genereras en motsvarande YAML-fil i mappen:
-`/config/knx_doubleclick_actions/`
-
-Filen öppnas enklast via valfri filredigerare (File Editor, VS Code) eller genom att notera sökvägen i integrationens inställningar.
+Du kan redigera åtgärderna på två sätt:
+1.  **Via UI:** Klicka på "Konfigurera" (kugghjulet) på integrationen och välj "Redigera Åtgärder (YAML)".
+2.  **Via Fil:** Redigera filen i mappen `/config/knx_doubleclick_actions/`.
 
 ### Exempel på innehåll
 
@@ -58,9 +59,22 @@ Filen öppnas enklast via valfri filredigerare (File Editor, VS Code) eller geno
   data:
     brightness_pct: 80
 
+# Användning av Labels (Etiketter)
+# Tänd alla enheter med etiketten 'mysbelysning'
+- service: light.turn_on
+  target:
+    label_id: mysbelysning
+
+# Användning av Areas (Områden)
+# Släck allt i vardagsrummet
+- service: light.turn_off
+  target:
+    area_id: vardagsrum
+
 # Avancerad åtgärd: Skicka notis med dynamisk data
 # Notera: Användning av {{ }} tvingar integrationen att använda Script-motorn
 - service: persistent_notification.create
   data:
     title: "Dubbelklick registrerat!"
     message: "Detekterades för '{{ config_entry_name }}' med intervall {{ trigger.time_difference_seconds }}s."
+```
