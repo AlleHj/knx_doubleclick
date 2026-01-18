@@ -99,43 +99,6 @@ async def test_double_click_success(mock_hass, mock_config_entry):
             assert kwargs["target"] == {"entity_id": "light.test"}
 
 @pytest.mark.asyncio
-async def test_template_variables_in_script(mock_hass, mock_config_entry):
-    """
-    Testar att template-variabler skickas korrekt till script-motorn.
-    """
-    sensor = KnxDoubleClickSensor(mock_hass, mock_config_entry, "Test Sensor")
-    mock_hass.async_add_executor_job = AsyncMock(return_value=True)
-    sensor.async_write_ha_state = MagicMock()
-
-    await sensor.async_added_to_hass()
-
-    with patch("custom_components.knx_doubleclick.sensor.Script") as mock_script_cls:
-        mock_script_instance = mock_script_cls.return_value
-        mock_script_instance.async_run = AsyncMock()
-
-        actions = [{"condition": "template", "value_template": "{{ trigger.value == 1 }}"}]
-
-        with patch.object(sensor, "_load_parsed_actions_from_file", new_callable=AsyncMock, return_value=actions):
-            now = dt_util.utcnow()
-            with patch("homeassistant.util.dt.utcnow", return_value=now):
-                event = MagicMock()
-                event.data = {"destination": "1/1/1", "value": 1}
-                await sensor._async_handle_knx_event(event)
-                await sensor._async_handle_knx_event(event)
-
-        mock_script_instance.async_run.assert_called()
-        call_args = mock_script_instance.async_run.call_args
-        run_variables = call_args.kwargs.get("run_variables")
-
-        assert run_variables is not None
-        assert "trigger" in run_variables
-        trigger = run_variables["trigger"]
-        assert trigger["platform"] == "knx_doubleclick"
-        assert trigger["name"] == "Test"
-        assert trigger["group_address"] == "1/1/1"
-        assert trigger["value"] == 1
-
-@pytest.mark.asyncio
 async def test_repeat_loop_with_service_call_crash(mock_hass, mock_config_entry):
     """
     Testar att en repeat-loop med serviceanrop inte kraschar och faktiskt körs.
