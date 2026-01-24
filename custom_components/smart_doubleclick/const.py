@@ -1,14 +1,15 @@
 # Versionshistorik:
-# Version: 0.8.20
+# Version: 1.0.0
 # Datum: 2026-01-15
 # Upphovsman: Home Assistant Expert
 # Ändringar:
 # - Renasat bort konstanter för YAML-editor då den funktionen tagits bort från UI.
+# - Lagt till Debug-läge.
 
-"""Konstanter för KNX Dubbelklicksdetektor-integrationen."""
+"""Konstanter för Smart Double Click-integrationen."""
 
 # Domänen för integrationen
-DOMAIN = "knx_doubleclick"
+DOMAIN = "smart_doubleclick"
 
 # Plattformar
 PLATFORMS = ["binary_sensor"]
@@ -20,21 +21,23 @@ CONF_SOURCE_ENTITY = "source_entity"
 CONF_KNX_VALUE = "knx_value"  # Deprecated/Legacy
 CONF_TRIGGER_VALUE = "trigger_value"
 CONF_DOUBLE_CLICK_WINDOW_SECONDS = "double_click_window_seconds"
+CONF_DEBUG_MODE = "debug_mode"
 
 # Standardvärden
 DEFAULT_KNX_VALUE = 1
 DEFAULT_TRIGGER_VALUE = "on"
 DEFAULT_DOUBLE_CLICK_WINDOW_SECONDS = 0.7
 DEFAULT_NAME_SUFFIX = "Min Knapp"
+DEFAULT_DEBUG_MODE = False
 
 # Katalog och standardinnehåll för åtgärdsfiler
-ACTIONS_DIR_BASENAME = "knx_doubleclick_actions"
+ACTIONS_DIR_BASENAME = "smart_doubleclick_actions"
 
 # DEFAULT_ACTIONS_FILE_CONTENT
 DEFAULT_ACTIONS_FILE_CONTENT = """#---------------------------------------------------------------------------
-# Åtgärder för KNX Dubbelklicksdetektor
+# Åtgärder för Smart Double Click
 #
-# Denna fil är kopplad till en specifik instans av KNX Dubbelklicksdetektor.
+# Denna fil är kopplad till en specifik instans av Smart Double Click.
 # Lägg till dina önskade Home Assistant-åtgärder i YAML-format nedan.
 #---------------------------------------------------------------------------
 
@@ -45,56 +48,6 @@ DEFAULT_ACTIONS_FILE_CONTENT = """#---------------------------------------------
 # - service: switch.turn_on
 #   target:
 #     entity_id: switch.min_switch_entitet
-
-
-# --- Exempel: Använda Etiketter (Labels) ---
-# Du kan styra flera enheter samtidigt genom att använda etiketter (Labels).
-# 1. Skapa en etikett i Home Assistant (Inställningar -> Etiketter).
-# 2. Tilldela etiketten till de enheter du vill styra (t.ex. alla fönsterlampor).
-# 3. Använd 'label_id' i 'target' sektionen.
-#
-# Exempel: Tänd alla enheter som har etiketten 'kvallsbelysning'.
-#
-# - service: light.turn_on
-#   target:
-#     label_id: kvallsbelysning
-
-
-# --- Exempel: Använda Områden (Areas) ---
-# På samma sätt kan du styra alla enheter i ett specifikt rum/område.
-#
-# Exempel: Släck allt i vardagsrummet.
-#
-# - service: light.turn_off
-#   target:
-#     area_id: vardagsrum
-
-
-# --- Exempel: Avancerad Script-logik ---
-# Du kan använda villkor och annan script-logik.
-#
-# Exempel: Tänd lampan endast om solen har gått ner.
-#
-# - condition: state
-#   entity_id: sun.sun
-#   state: "below_horizon"
-# - service: light.turn_on
-#   target:
-#     entity_id: light.hallen
-
-
-# --- Exempel: Använda Templates och Variabler ---
-# Du har tillgång till följande variabler i templates:
-# {{ trigger.name }}            - Namnet på knappen (från inställningar)
-# {{ trigger.group_address }}   - KNX Gruppadressen
-# {{ trigger.value }}           - Värdet som skickades (t.ex. 1)
-# {{ trigger.time_difference_seconds }} - Tid mellan klick
-#
-# Exempel: Skicka en notis med namnet på knappen.
-#
-# - service: notify.persistent_notification
-#   data:
-#     message: "Dubbelklick på {{ trigger.name }}!"
 """
 
 # Attribut

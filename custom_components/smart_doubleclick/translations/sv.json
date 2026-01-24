@@ -2,13 +2,14 @@
   "config": {
     "step": {
       "user": {
-        "title": "Smart Dubbelklick: Ny Lyssnare",
+        "title": "Smart Double Click: Ny Lyssnare",
         "description": "Konfigurera en ny lyssnare för dubbelklick. Välj en entitet att övervaka och vilket tillstånd som ska trigga detekteringen.",
         "data": {
-          "name_suffix": "Namn (t.ex. 'Vardagsrum Tak')",
+          "name_suffix": "Namn på entitet",
           "source_entity": "Käll-entitet att lyssna på",
           "trigger_value": "Värde att trigga på (t.ex. 'on' eller 'off')",
-          "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)"
+          "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)",
+          "debug_mode": "Debug-läge (skriv ut händelser i loggen)"
         }
       }
     },
@@ -27,20 +28,21 @@
             "basic_options": "Konfigurera Inställningar",
             "edit_yaml": "Redigera Åtgärder (YAML)"
         },
-        "description": "Välj vad du vill göra för '{config_entry_name}'"
+        "description": "Välj vad du vill göra för {config_entry_name}"
       },
       "basic_options": {
-        "title": "Smart Dubbelklick: Grundläggande",
-        "description": "Justera inställningarna för '{config_entry_name}'.",
+        "title": "Smart Double Click: Grundläggande",
+        "description": "Justera inställningarna för {config_entry_name}.",
         "data": {
           "source_entity": "Käll-entitet att lyssna på",
           "trigger_value": "Värde att trigga på",
-          "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)"
+          "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)",
+          "debug_mode": "Debug-läge (skriv ut händelser i loggen)"
         }
       },
       "edit_yaml": {
           "title": "Redigera YAML Åtgärder",
-          "description": "Redigera åtgärderna som ska utföras vid dubbelklick.\nFil: `{actions_file_path}`",
+          "description": "Redigera åtgärderna som ska utföras vid dubbelklick för {config_entry_name}.\nFil: `{actions_file_path}`",
           "data": {
               "yaml_content": "YAML Innehåll"
           }

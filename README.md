@@ -25,9 +25,9 @@ Denna integration är byggd för stabilitet och prestanda, med stöd för både 
 
 ### Manuell Installation
 
-1.  Ladda ner mappen `knx_doubleclick` från detta repository.
+1.  Ladda ner mappen `smart_doubleclick` från detta repository.
 2.  Kopiera mappen till din Home Assistant-katalog under `/config/custom_components/`.
-3.  Sökvägen ska vara: `/config/custom_components/knx_doubleclick/`.
+3.  Sökvägen ska vara: `/config/custom_components/smart_doubleclick/`.
 4.  Starta om Home Assistant.
 
 ## ⚙️ Konfiguration
@@ -47,7 +47,7 @@ Integrationen konfigureras uteslutande via **Enheter & Tjänster** i Home Assist
 
 Du kan redigera åtgärderna på två sätt:
 1.  **Via UI:** Klicka på "Konfigurera" (kugghjulet) på integrationen och välj "Redigera Åtgärder (YAML)".
-2.  **Via Fil:** Redigera filen i mappen `/config/knx_doubleclick_actions/`.
+2.  **Via Fil:** Redigera filen i mappen `/config/smart_doubleclick_actions/`.
 
 ### Exempel på innehåll
 

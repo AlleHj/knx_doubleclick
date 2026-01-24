@@ -1,12 +1,15 @@
 # Versionshistorik:
-# Version: 0.9.0
+# Version: 1.0.0
 # Datum: 2026-01-15
+# Upphovsman: Home Assistant Expert
 # Ändringar:
 # - Bytte till BinarySensorEntity.
 # - Ersatte KNX-lyssnare med State-lyssnare.
 # - Implementerade CONF_SOURCE_ENTITY och CONF_TRIGGER_VALUE.
+# - Lade till Debug-loggning.
+# - Uppdaterade namngivning för att matcha användarens val exakt.
 
-"""Sensorplattform för Smart Dubbelklicksdetektor."""
+"""Sensorplattform för Smart Double Click."""
 
 # pylint: disable=too-many-lines
 import datetime
@@ -34,11 +37,13 @@ from .const import (
     ATTR_LAST_CLICK_TIME,
     ATTR_LAST_TIME_DIFFERENCE,
     COMPLEX_ACTION_KEYS,
+    CONF_DEBUG_MODE,
     CONF_DOUBLE_CLICK_WINDOW_SECONDS,
     CONF_SOURCE_ENTITY,
     CONF_TRIGGER_VALUE,
     CONF_NAME_SUFFIX,
     DEFAULT_ACTIONS_FILE_CONTENT,
+    DEFAULT_DEBUG_MODE,
     DEFAULT_NAME_SUFFIX,
     DOMAIN,
 )
@@ -85,7 +90,7 @@ async def async_setup_entry(
         )
         try:
             header_comment = (
-                f"# Åtgärdsfil för Smart Dubbelklicksdetektor instans: '{config_entry.title}'\n"
+                f"# Åtgärdsfil för Smart Double Click instans: '{config_entry.title}'\n"
                 f"# Entry ID: {config_entry.entry_id}\n"
                 f"# Filnamn: {_generate_actions_filename_for_sensor(config_entry)}\n"
                 f"# Sökväg till denna fil: {actions_file_path}\n"
@@ -107,17 +112,16 @@ async def async_setup_entry(
             )
 
     name_suffix = config_entry.data.get(CONF_NAME_SUFFIX, DEFAULT_NAME_SUFFIX)
-    full_sensor_name = f"Smart Dubbelklick {name_suffix}"
+    # Använd exakt namn från config (inget prefix)
+    full_sensor_name = name_suffix
 
     sensor = SmartDoubleClickBinarySensor(hass, config_entry, full_sensor_name)
     async_add_entities([sensor])
-    _LOGGER.info(
-        "Sensor '%s' tillagd för Smart Dubbelklicksdetektor.", full_sensor_name
-    )
+    _LOGGER.info("Sensor '%s' tillagd för Smart Double Click.", full_sensor_name)
 
 
 class SmartDoubleClickBinarySensor(BinarySensorEntity):
-    """Representation av en Smart Dubbelklicksdetektor-sensor."""
+    """Representation av en Smart Double Click-sensor."""
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str):
@@ -135,6 +139,7 @@ class SmartDoubleClickBinarySensor(BinarySensorEntity):
         self._source_entity: Optional[str] = None
         self._trigger_value: Optional[str] = None
         self._double_click_window_seconds: Optional[float] = None
+        self._debug_mode: bool = DEFAULT_DEBUG_MODE
 
         self._actions_file_path = _get_actions_file_path_for_sensor_instance(
             hass, config_entry
@@ -170,6 +175,7 @@ class SmartDoubleClickBinarySensor(BinarySensorEntity):
             ATTR_TRIGGER_VALUE: self._trigger_value,
             ATTR_DOUBLE_CLICK_WINDOW: self._double_click_window_seconds,
             ATTR_ACTIONS_FILE_PATH: self._actions_file_path,
+            "debug_mode": self._debug_mode,
         }
         if self._last_trigger_time_utc:
             attrs[ATTR_LAST_CLICK_TIME] = dt_util.as_local(
@@ -192,9 +198,10 @@ class SmartDoubleClickBinarySensor(BinarySensorEntity):
         self._double_click_window_seconds = combined_config.get(
             CONF_DOUBLE_CLICK_WINDOW_SECONDS
         )
+        self._debug_mode = combined_config.get(CONF_DEBUG_MODE, DEFAULT_DEBUG_MODE)
 
         name_suffix = self.config_entry.data.get(CONF_NAME_SUFFIX, DEFAULT_NAME_SUFFIX)
-        self._name = f"Smart Dubbelklick {name_suffix}"
+        self._name = name_suffix  # Exakt namn
 
         _LOGGER.debug(
             "Sensor %s instansvariabler uppdaterade från konfiguration.", self.name
@@ -395,6 +402,18 @@ class SmartDoubleClickBinarySensor(BinarySensorEntity):
         self._last_trigger_time_utc = current_time_utc
         self._last_time_difference_seconds = None
 
+        # Debug: Första klicket (eller senare klick om tiden runnit ut)
+        if self._debug_mode and (
+            previous_trigger_time_utc is None
+            or (current_time_utc - previous_trigger_time_utc).total_seconds()
+            > self._double_click_window_seconds
+        ):
+            _LOGGER.info(
+                "Klick registrerat för %s. Tid: %s.",
+                self.name,
+                current_time_utc.isoformat(),
+            )
+
         if previous_trigger_time_utc and self._double_click_window_seconds is not None:
             time_difference_seconds = (
                 current_time_utc - previous_trigger_time_utc
@@ -409,11 +428,19 @@ class SmartDoubleClickBinarySensor(BinarySensorEntity):
             )
 
             if time_difference_seconds <= self._double_click_window_seconds:
-                _LOGGER.info(
-                    "Dubbelklick detekterat för %s! Tidsdifferens: %.3f s.",
-                    self.name,
-                    time_difference_seconds,
-                )
+                if self._debug_mode:
+                    _LOGGER.info(
+                        "Andra klick registrerat för %s. Tid: %s. Diff: %.3f s. TRIGGER UTLOSTS!",
+                        self.name,
+                        current_time_utc.isoformat(),
+                        time_difference_seconds,
+                    )
+                else:
+                    _LOGGER.info(
+                        "Dubbelklick detekterat för %s! Tidsdifferens: %.3f s.",
+                        self.name,
+                        time_difference_seconds,
+                    )
 
                 # Momentan aktivering
                 self._attr_is_on = True

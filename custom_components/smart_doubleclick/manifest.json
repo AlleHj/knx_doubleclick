@@ -1,0 +1,17 @@
+{
+  "domain": "smart_doubleclick",
+  "name": "Smart Double Click",
+  "codeowners": [
+    "@AlleHj"
+  ],
+  "config_flow": true,
+  "dependencies": [
+    "http",
+    "frontend"
+  ],
+  "documentation": "https://github.com/AlleHj/smart_doubleclick",
+  "iot_class": "local_push",
+  "issue_tracker": "https://github.com/AlleHj/smart_doubleclick/issues",
+  "requirements": [],
+  "version": "1.0.0"
+}

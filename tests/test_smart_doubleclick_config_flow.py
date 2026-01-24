@@ -1,5 +1,5 @@
 """
-Tester för Config Flow i Smart Dubbelklicksdetektor.
+Tester för Config Flow i Smart Double Click.
 """
 
 from unittest.mock import MagicMock, mock_open, patch
@@ -7,15 +7,16 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 from homeassistant import config_entries, data_entry_flow
 
-from custom_components.knx_doubleclick.config_flow import (
-    KnxDoubleClickOptionsFlowHandler,
+from custom_components.smart_doubleclick.config_flow import (
+    SmartDoubleClickOptionsFlowHandler,
 )
-from custom_components.knx_doubleclick.const import (
+from custom_components.smart_doubleclick.const import (
     CONF_YAML_CONTENT,
     CONF_SOURCE_ENTITY,
     CONF_TRIGGER_VALUE,
     CONF_NAME_SUFFIX,
     CONF_DOUBLE_CLICK_WINDOW_SECONDS,
+    CONF_DEBUG_MODE,
     DOMAIN,
     ERROR_INVALID_YAML,
 )
@@ -33,6 +34,7 @@ def mock_config_entry(mock_hass):
         CONF_SOURCE_ENTITY: "input_boolean.test",
         CONF_TRIGGER_VALUE: "on",
         CONF_DOUBLE_CLICK_WINDOW_SECONDS: 0.5,
+        CONF_DEBUG_MODE: False,
     }
     entry.options = {}
 
@@ -54,7 +56,7 @@ async def test_options_flow_init_menu(mock_hass, mock_config_entry):
     """
 
     # Initiera flödet manuellt eftersom vi mockar mycket
-    flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
+    flow = SmartDoubleClickOptionsFlowHandler(mock_config_entry)
     flow.hass = mock_hass
     # Sätt handler attributet manuellt (som HA gör internt)
     flow.handler = mock_config_entry.entry_id
@@ -82,7 +84,7 @@ async def test_options_flow_edit_yaml_load(mock_hass, mock_config_entry):
     Assert: Verifiera att formuläret visas och att default-värdet är filens innehåll.
     """
 
-    flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
+    flow = SmartDoubleClickOptionsFlowHandler(mock_config_entry)
     flow.hass = mock_hass
     flow.handler = mock_config_entry.entry_id
 
@@ -114,7 +116,7 @@ async def test_options_flow_edit_yaml_save_valid(mock_hass, mock_config_entry):
     Assert: Verifiera att os.replace anropas (atomärt sparande) och att flödet avslutas (CREATE_ENTRY).
     """
 
-    flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
+    flow = SmartDoubleClickOptionsFlowHandler(mock_config_entry)
     flow.hass = mock_hass
     flow.handler = mock_config_entry.entry_id
 
@@ -150,7 +152,7 @@ async def test_options_flow_edit_yaml_save_invalid(mock_hass, mock_config_entry)
     Assert: Verifiera att vi får tillbaka formuläret med felkod 'invalid_yaml'.
     """
 
-    flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
+    flow = SmartDoubleClickOptionsFlowHandler(mock_config_entry)
     flow.hass = mock_hass
     flow.handler = mock_config_entry.entry_id
 

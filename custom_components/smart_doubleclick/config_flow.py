@@ -1,8 +1,9 @@
-# knx_doubleclick/config_flow.py
-# Version: 0.9.0
+# smart_doubleclick/config_flow.py
+# Version: 1.0.0
 # Datum: 2026-01-15
 # Ändringar:
 # - Ersatt KNX-specifika fält med EntitySelector och TriggerValue.
+# - Lagt till Debug-läge.
 
 import logging
 import os
@@ -14,6 +15,7 @@ from homeassistant import config_entries, core
 from homeassistant.core import callback
 from homeassistant.helpers import config_validation as cv
 from homeassistant.helpers.selector import (
+    BooleanSelector,
     EntitySelector,
     EntitySelectorConfig,
     TemplateSelector,
@@ -22,11 +24,13 @@ from homeassistant.helpers.selector import (
 
 from .const import (
     ACTIONS_DIR_BASENAME,
+    CONF_DEBUG_MODE,
     CONF_DOUBLE_CLICK_WINDOW_SECONDS,
     CONF_NAME_SUFFIX,
     CONF_SOURCE_ENTITY,
     CONF_TRIGGER_VALUE,
     CONF_YAML_CONTENT,
+    DEFAULT_DEBUG_MODE,
     DEFAULT_DOUBLE_CLICK_WINDOW_SECONDS,
     DEFAULT_NAME_SUFFIX,
     DEFAULT_TRIGGER_VALUE,
@@ -52,7 +56,7 @@ def _config_flow_get_actions_file_path(
     return hass.config.path(ACTIONS_DIR_BASENAME, filename)
 
 
-class KnxDoubleClickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
+class SmartDoubleClickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Hanterar den initiala konfigurationen."""
 
     # pylint: disable=abstract-method
@@ -62,9 +66,9 @@ class KnxDoubleClickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     @callback
     def async_get_options_flow(
         config_entry: config_entries.ConfigEntry,
-    ) -> "KnxDoubleClickOptionsFlowHandler":
+    ) -> "SmartDoubleClickOptionsFlowHandler":
         """Skapar options flow-hanteraren."""
-        return KnxDoubleClickOptionsFlowHandler(config_entry)
+        return SmartDoubleClickOptionsFlowHandler(config_entry)
 
     async def async_step_user(
         self, user_input: Optional[Dict[str, Any]] = None
@@ -92,12 +96,17 @@ class KnxDoubleClickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_DOUBLE_CLICK_WINDOW_SECONDS: user_input[
                         CONF_DOUBLE_CLICK_WINDOW_SECONDS
                     ],
+                    CONF_DEBUG_MODE: user_input.get(
+                        CONF_DEBUG_MODE, DEFAULT_DEBUG_MODE
+                    ),
                 }
-                entry_title = f"{name_suffix} ({user_input[CONF_SOURCE_ENTITY]})"
+                # Använd endast namnet som användaren angivit
+                entry_title = name_suffix
                 return self.async_create_entry(title=entry_title, data=data_to_save)
 
         data_schema = vol.Schema(
             {
+                vol.Required(CONF_NAME_SUFFIX, default=DEFAULT_NAME_SUFFIX): cv.string,
                 vol.Required(CONF_SOURCE_ENTITY): EntitySelector(
                     EntitySelectorConfig()
                 ),
@@ -108,7 +117,9 @@ class KnxDoubleClickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     CONF_DOUBLE_CLICK_WINDOW_SECONDS,
                     default=DEFAULT_DOUBLE_CLICK_WINDOW_SECONDS,
                 ): vol.Coerce(float),
-                vol.Required(CONF_NAME_SUFFIX, default=DEFAULT_NAME_SUFFIX): cv.string,
+                vol.Optional(
+                    CONF_DEBUG_MODE, default=DEFAULT_DEBUG_MODE
+                ): BooleanSelector(),
             }
         )
 
@@ -117,7 +128,7 @@ class KnxDoubleClickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         )
 
 
-class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
+class SmartDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
     """Hanterar ändringar av inställningar (kugghjulet)."""
 
     def __init__(self, config_entry: config_entries.ConfigEntry):
@@ -157,6 +168,7 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
         current_win = current_config.get(
             CONF_DOUBLE_CLICK_WINDOW_SECONDS, DEFAULT_DOUBLE_CLICK_WINDOW_SECONDS
         )
+        current_debug = current_config.get(CONF_DEBUG_MODE, DEFAULT_DEBUG_MODE)
 
         options_schema = vol.Schema(
             {
@@ -169,13 +181,19 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
                 vol.Required(
                     CONF_DOUBLE_CLICK_WINDOW_SECONDS, default=float(current_win)
                 ): vol.Coerce(float),
+                vol.Optional(CONF_DEBUG_MODE, default=current_debug): BooleanSelector(),
             }
+        )
+
+        config_entry_name = self.config_entry.title or self.config_entry.data.get(
+            CONF_NAME_SUFFIX, "Okänd"
         )
 
         return self.async_show_form(
             step_id="basic_options",
             data_schema=options_schema,
             errors=errors,
+            description_placeholders={"config_entry_name": config_entry_name},
             last_step=False,
         )
 
@@ -242,10 +260,17 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
             {vol.Required(CONF_YAML_CONTENT, default=yaml_content): TemplateSelector()}
         )
 
+        config_entry_name = self.config_entry.title or self.config_entry.data.get(
+            CONF_NAME_SUFFIX, "Okänd"
+        )
+
         return self.async_show_form(
             step_id="edit_yaml",
             data_schema=data_schema,
             errors=errors,
-            description_placeholders={"actions_file_path": actions_file_path},
+            description_placeholders={
+                "actions_file_path": actions_file_path,
+                "config_entry_name": config_entry_name,
+            },
             last_step=True,
         )

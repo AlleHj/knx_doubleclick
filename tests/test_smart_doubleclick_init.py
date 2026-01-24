@@ -3,7 +3,7 @@ Grundläggande tester för att verifiera att komponenten kan laddas.
 Detta fungerar som ett "smoke test" för testmiljön.
 """
 
-from custom_components.knx_doubleclick.const import DOMAIN
+from custom_components.smart_doubleclick.const import DOMAIN
 
 
 def test_domain_constant():
@@ -13,4 +13,4 @@ def test_domain_constant():
     Varför: Detta säkerställer att vi kan importera från komponenten och att
     grundläggande konstanter är korrekta.
     """
-    assert DOMAIN == "knx_doubleclick"
+    assert DOMAIN == "smart_doubleclick"
