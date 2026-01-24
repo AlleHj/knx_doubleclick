@@ -15,9 +15,9 @@ PLATFORMS = ["binary_sensor"]
 
 # Konfigurationsnycklar
 CONF_NAME_SUFFIX = "name_suffix"
-CONF_KNX_GROUP_ADDRESS = "knx_group_address" # Deprecated/Legacy
+CONF_KNX_GROUP_ADDRESS = "knx_group_address"  # Deprecated/Legacy
 CONF_SOURCE_ENTITY = "source_entity"
-CONF_KNX_VALUE = "knx_value" # Deprecated/Legacy
+CONF_KNX_VALUE = "knx_value"  # Deprecated/Legacy
 CONF_TRIGGER_VALUE = "trigger_value"
 CONF_DOUBLE_CLICK_WINDOW_SECONDS = "double_click_window_seconds"
 
@@ -109,9 +109,19 @@ ATTR_LAST_TIME_DIFFERENCE = "last_time_difference_seconds"
 
 # Nycklar som indikerar att en åtgärd är mer komplex än ett enkelt serviceanrop
 COMPLEX_ACTION_KEYS = [
-    "condition", "delay", "repeat", "choose", "sequence",
-    "wait_template", "wait_for_trigger", "event", "event_template",
-    "variables", "stop", "parallel", "scene"
+    "condition",
+    "delay",
+    "repeat",
+    "choose",
+    "sequence",
+    "wait_template",
+    "wait_for_trigger",
+    "event",
+    "event_template",
+    "variables",
+    "stop",
+    "parallel",
+    "scene",
 ]
 
 # Felnycklar

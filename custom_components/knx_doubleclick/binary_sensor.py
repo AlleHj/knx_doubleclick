@@ -1,11 +1,13 @@
 # Versionshistorik:
-# Version: 0.8.21
+# Version: 0.9.0
 # Datum: 2026-01-15
-# Upphovsman: AI-Assistent
 # Ändringar:
-# - Linting-fixar för att möta striktare krav (line length, complexity suppression).
+# - Bytte till BinarySensorEntity.
+# - Ersatte KNX-lyssnare med State-lyssnare.
+# - Implementerade CONF_SOURCE_ENTITY och CONF_TRIGGER_VALUE.
 
-"""Sensorplattform för KNX Dubbelklicksdetektor."""
+"""Sensorplattform för Smart Dubbelklicksdetektor."""
+
 # pylint: disable=too-many-lines
 import datetime
 import logging
@@ -14,10 +16,11 @@ from typing import Any, Dict, List, Optional
 
 import homeassistant.util.dt as dt_util
 import yaml
-from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
+from homeassistant.components.binary_sensor import BinarySensorEntity
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
+from homeassistant.helpers.event import async_track_state_change_event, async_call_later
 from homeassistant.helpers.script import SCRIPT_MODE_SINGLE, Script
 import homeassistant.helpers.config_validation as cv
 from homeassistant.util import slugify
@@ -26,14 +29,14 @@ from .const import (
     ACTIONS_DIR_BASENAME,
     ATTR_ACTIONS_FILE_PATH,
     ATTR_DOUBLE_CLICK_WINDOW,
-    ATTR_KNX_GROUP_ADDRESS,
-    ATTR_KNX_LISTEN_VALUE,
+    ATTR_TRIGGER_VALUE,
+    ATTR_SOURCE_ENTITY,
     ATTR_LAST_CLICK_TIME,
     ATTR_LAST_TIME_DIFFERENCE,
     COMPLEX_ACTION_KEYS,
     CONF_DOUBLE_CLICK_WINDOW_SECONDS,
-    CONF_KNX_GROUP_ADDRESS,
-    CONF_KNX_VALUE,
+    CONF_SOURCE_ENTITY,
+    CONF_TRIGGER_VALUE,
     CONF_NAME_SUFFIX,
     DEFAULT_ACTIONS_FILE_CONTENT,
     DEFAULT_NAME_SUFFIX,
@@ -49,7 +52,9 @@ def _generate_actions_filename_for_sensor(config_entry: ConfigEntry) -> str:
     return f"{s_name_suffix}--{config_entry.entry_id}.yaml"
 
 
-def _get_actions_file_path_for_sensor_instance(hass: HomeAssistant, config_entry: ConfigEntry) -> str:
+def _get_actions_file_path_for_sensor_instance(
+    hass: HomeAssistant, config_entry: ConfigEntry
+) -> str:
     filename = _generate_actions_filename_for_sensor(config_entry)
     return hass.config.path(ACTIONS_DIR_BASENAME, filename)
 
@@ -63,24 +68,24 @@ async def async_setup_entry(
     _LOGGER.debug(
         "Sätter upp sensor för config entry: %s (ID: %s)",
         config_entry.title,
-        config_entry.entry_id
+        config_entry.entry_id,
     )
 
     actions_file_path = _get_actions_file_path_for_sensor_instance(hass, config_entry)
     _LOGGER.info(
         "Åtgärdsfil för '%s' kommer att hanteras i: %s.",
         config_entry.title,
-        actions_file_path
+        actions_file_path,
     )
 
     if not await hass.async_add_executor_job(os.path.exists, actions_file_path):
         _LOGGER.info(
             "Åtgärdsfil %s saknas, skapar med standardinnehåll och identifierande header.",
-            actions_file_path
+            actions_file_path,
         )
         try:
             header_comment = (
-                f"# Åtgärdsfil för KNX Dubbelklicksdetektor instans: '{config_entry.title}'\n"
+                f"# Åtgärdsfil för Smart Dubbelklicksdetektor instans: '{config_entry.title}'\n"
                 f"# Entry ID: {config_entry.entry_id}\n"
                 f"# Filnamn: {_generate_actions_filename_for_sensor(config_entry)}\n"
                 f"# Sökväg till denna fil: {actions_file_path}\n"
@@ -94,22 +99,25 @@ async def async_setup_entry(
                     os.makedirs(actions_dir_parent_path, exist_ok=True)
                 with open(actions_file_path, "w", encoding="utf-8") as f:
                     f.write(full_content_for_new_file)
+
             await hass.async_add_executor_job(write_default_file_with_header)
-        except Exception as e: # pylint: disable=broad-exception-caught
-            _LOGGER.error("Kunde inte skapa standard åtgärdsfil %s: %s", actions_file_path, e)
+        except Exception as e:  # pylint: disable=broad-exception-caught
+            _LOGGER.error(
+                "Kunde inte skapa standard åtgärdsfil %s: %s", actions_file_path, e
+            )
 
     name_suffix = config_entry.data.get(CONF_NAME_SUFFIX, DEFAULT_NAME_SUFFIX)
-    full_sensor_name = f"KNX Dubbelklick Lyssnare {name_suffix}"
+    full_sensor_name = f"Smart Dubbelklick {name_suffix}"
 
-    sensor = KnxDoubleClickSensor(hass, config_entry, full_sensor_name)
+    sensor = SmartDoubleClickBinarySensor(hass, config_entry, full_sensor_name)
     async_add_entities([sensor])
-    _LOGGER.info("Sensor '%s' tillagd för KNX Dubbelklicksdetektor.", full_sensor_name)
+    _LOGGER.info(
+        "Sensor '%s' tillagd för Smart Dubbelklicksdetektor.", full_sensor_name
+    )
 
 
-class KnxDoubleClickSensor(SensorEntity):
-    """Representation av en KNX Dubbelklicksdetektor-sensor."""
-
-    _attr_device_class = SensorDeviceClass.TIMESTAMP
+class SmartDoubleClickBinarySensor(BinarySensorEntity):
+    """Representation av en Smart Dubbelklicksdetektor-sensor."""
 
     # pylint: disable=too-many-instance-attributes
     def __init__(self, hass: HomeAssistant, config_entry: ConfigEntry, name: str):
@@ -117,27 +125,29 @@ class KnxDoubleClickSensor(SensorEntity):
         self.hass = hass
         self.config_entry = config_entry
         self._name = name
-        self._attr_unique_id = f"{config_entry.entry_id}_sensor"
+        self._attr_unique_id = f"{config_entry.entry_id}_binary_sensor"
         self._attr_should_poll = False
+        self._attr_is_on = False
 
-        self._last_valid_knx_event_time_utc: Optional[datetime.datetime] = None
-        self._native_value: Optional[datetime.datetime] = None
+        self._last_trigger_time_utc: Optional[datetime.datetime] = None
         self._remove_listener: Optional[callable] = None
 
-        self._knx_group_address: Optional[str] = None
-        self._knx_value: Optional[int] = None
+        self._source_entity: Optional[str] = None
+        self._trigger_value: Optional[str] = None
         self._double_click_window_seconds: Optional[float] = None
 
-        self._actions_file_path = _get_actions_file_path_for_sensor_instance(hass, config_entry)
+        self._actions_file_path = _get_actions_file_path_for_sensor_instance(
+            hass, config_entry
+        )
         self._last_time_difference_seconds: Optional[float] = None
 
         self._update_instance_variables_from_config()
 
         _LOGGER.debug(
-            "Sensor %s initialiserad. Lyssnar på GA: %s, Värde: %s, Fönster: %s s. Åtgärdsfil: %s",
+            "Sensor %s initialiserad. Källa: %s, Triggar på: %s, Fönster: %s s. Åtgärdsfil: %s",
             self._name,
-            self._knx_group_address,
-            self._knx_value,
+            self._source_entity,
+            self._trigger_value,
             self._double_click_window_seconds,
             self._actions_file_path,
         )
@@ -148,24 +158,28 @@ class KnxDoubleClickSensor(SensorEntity):
         return self._name
 
     @property
-    def native_value(self) -> Optional[datetime.datetime]:
-        """Returnerar sensorns värde (tidsstämpel för senaste klick)."""
-        return self._native_value
+    def is_on(self) -> bool:
+        """Returnerar om sensorn är på (momentant)."""
+        return self._attr_is_on
 
     @property
     def extra_state_attributes(self) -> Dict[str, Any]:
         """Returnerar extra attribut."""
         attrs = {
-            ATTR_KNX_GROUP_ADDRESS: self._knx_group_address,
-            ATTR_KNX_LISTEN_VALUE: self._knx_value,
+            ATTR_SOURCE_ENTITY: self._source_entity,
+            ATTR_TRIGGER_VALUE: self._trigger_value,
             ATTR_DOUBLE_CLICK_WINDOW: self._double_click_window_seconds,
             ATTR_ACTIONS_FILE_PATH: self._actions_file_path,
         }
-        if self._native_value:
-            attrs[ATTR_LAST_CLICK_TIME] = dt_util.as_local(self._native_value).isoformat()
+        if self._last_trigger_time_utc:
+            attrs[ATTR_LAST_CLICK_TIME] = dt_util.as_local(
+                self._last_trigger_time_utc
+            ).isoformat()
 
         if self._last_time_difference_seconds is not None:
-            attrs[ATTR_LAST_TIME_DIFFERENCE] = round(self._last_time_difference_seconds, 3)
+            attrs[ATTR_LAST_TIME_DIFFERENCE] = round(
+                self._last_time_difference_seconds, 3
+            )
         return attrs
 
     @callback
@@ -173,71 +187,96 @@ class KnxDoubleClickSensor(SensorEntity):
         """Uppdaterar lokala variabler från config entry."""
         combined_config = {**self.config_entry.data, **self.config_entry.options}
 
-        self._knx_group_address = combined_config.get(CONF_KNX_GROUP_ADDRESS)
-        self._knx_value = combined_config.get(CONF_KNX_VALUE)
-        self._double_click_window_seconds = combined_config.get(CONF_DOUBLE_CLICK_WINDOW_SECONDS)
+        self._source_entity = combined_config.get(CONF_SOURCE_ENTITY)
+        self._trigger_value = combined_config.get(CONF_TRIGGER_VALUE)
+        self._double_click_window_seconds = combined_config.get(
+            CONF_DOUBLE_CLICK_WINDOW_SECONDS
+        )
 
         name_suffix = self.config_entry.data.get(CONF_NAME_SUFFIX, DEFAULT_NAME_SUFFIX)
-        self._name = f"KNX Dubbelklick Lyssnare {name_suffix}"
+        self._name = f"Smart Dubbelklick {name_suffix}"
 
-        _LOGGER.debug("Sensor %s instansvariabler uppdaterade från konfiguration.", self.name)
+        _LOGGER.debug(
+            "Sensor %s instansvariabler uppdaterade från konfiguration.", self.name
+        )
 
     async def _load_parsed_actions_from_file(self) -> Optional[List[Dict[str, Any]]]:
         """Laddar och parsar åtgärder från YAML-filen."""
         # pylint: disable=broad-exception-caught
         # pylint: disable=too-many-return-statements
         actions_yaml_str: Optional[str] = None
-        if not await self.hass.async_add_executor_job(os.path.exists, self._actions_file_path):
-            _LOGGER.warning("Åtgärdsfilen %s för %s hittades inte.", self._actions_file_path, self.name)
+        if not await self.hass.async_add_executor_job(
+            os.path.exists, self._actions_file_path
+        ):
+            _LOGGER.warning(
+                "Åtgärdsfilen %s för %s hittades inte.",
+                self._actions_file_path,
+                self.name,
+            )
             return None
         try:
+
             def read_file_content():
                 with open(self._actions_file_path, "r", encoding="utf-8") as f:
                     return f.read()
+
             actions_yaml_str = await self.hass.async_add_executor_job(read_file_content)
         except Exception as e:
             _LOGGER.error(
                 "Kunde inte läsa åtgärdsfil %s för %s: %s",
-                self._actions_file_path, self.name, e
+                self._actions_file_path,
+                self.name,
+                e,
             )
             return None
 
         if not actions_yaml_str or not actions_yaml_str.strip():
-            _LOGGER.info("Åtgärdsfilen %s för %s är tom.", self._actions_file_path, self.name)
+            _LOGGER.info(
+                "Åtgärdsfilen %s för %s är tom.", self._actions_file_path, self.name
+            )
             return None
         try:
             parsed_actions = yaml.safe_load(actions_yaml_str)
             _LOGGER.debug(
                 "Sensor '%s': Parsade åtgärder från fil %s: %s",
-                self.name, self._actions_file_path, parsed_actions
+                self.name,
+                self._actions_file_path,
+                parsed_actions,
             )
-            if parsed_actions is None or (isinstance(parsed_actions, list) and not parsed_actions):
+            if parsed_actions is None or (
+                isinstance(parsed_actions, list) and not parsed_actions
+            ):
                 _LOGGER.info(
                     "Inga åtgärder att utföra från fil %s för %s (tom eller enbart kommentarer).",
-                    self._actions_file_path, self.name
+                    self._actions_file_path,
+                    self.name,
                 )
                 return None
             if not isinstance(parsed_actions, list):
                 _LOGGER.error(
                     "Innehållet i åtgärdsfilen %s för %s är inte en YAML-lista.",
-                    self._actions_file_path, self.name
+                    self._actions_file_path,
+                    self.name,
                 )
                 return None
             return parsed_actions
         except yaml.YAMLError as e:
-            _LOGGER.error("Ogiltig YAML i åtgärdsfil %s för %s: %s", self._actions_file_path, self.name, e)
+            _LOGGER.error(
+                "Ogiltig YAML i åtgärdsfil %s för %s: %s",
+                self._actions_file_path,
+                self.name,
+                e,
+            )
         return None
 
-    def _compile_script_from_parsed_actions(self, parsed_actions: List[Dict[str, Any]]) -> Optional[Script]:
+    def _compile_script_from_parsed_actions(
+        self, parsed_actions: List[Dict[str, Any]]
+    ) -> Optional[Script]:
         """Kompilerar åtgärder till ett Script-objekt."""
         if not parsed_actions:
             return None
         try:
-            # Validera och normalisera åtgärderna enligt HA script schema
-            # Detta löser problem med t.ex. 'service' vs 'service_template'
             validated_actions = cv.SCRIPT_SCHEMA(parsed_actions)
-            print(f"DEBUG: Validated actions: {validated_actions}") # DEBUG
-
             script_runner = Script(
                 self.hass,
                 validated_actions,
@@ -246,13 +285,18 @@ class KnxDoubleClickSensor(SensorEntity):
                 script_mode=SCRIPT_MODE_SINGLE,
                 logger=_LOGGER,
             )
-            _LOGGER.debug("Åtgärder kompilerade för %s. Antal åtgärder: %d", self.name, len(parsed_actions))
+            _LOGGER.debug(
+                "Åtgärder kompilerade för %s. Antal åtgärder: %d",
+                self.name,
+                len(parsed_actions),
+            )
             return script_runner
-        except Exception as e: # pylint: disable=broad-exception-caught
-            print(f"DEBUG: Exception in compile script: {e}") # DEBUG
+        except Exception as e:  # pylint: disable=broad-exception-caught
             _LOGGER.error(
                 "Oväntat fel vid kompilering av skript för %s från parsade åtgärder: %s",
-                self.name, e, exc_info=True
+                self.name,
+                e,
+                exc_info=True,
             )
         return None
 
@@ -263,160 +307,97 @@ class KnxDoubleClickSensor(SensorEntity):
         self.async_on_remove(
             self.config_entry.add_update_listener(self._async_options_updated)
         )
-        self._start_knx_listener()
+        self._start_listener()
 
     async def async_will_remove_from_hass(self) -> None:
         """När entiteten tas bort från HA."""
-        self._stop_knx_listener()
+        self._stop_listener()
         await super().async_will_remove_from_hass()
 
     @callback
-    def _start_knx_listener(self) -> None:
-        """Startar lyssnaren för KNX-event."""
+    def _start_listener(self) -> None:
+        """Startar lyssnaren för entitetsförändringar."""
         if self._remove_listener:
             self._remove_listener()
             self._remove_listener = None
 
-        if self._knx_group_address:
+        if self._source_entity:
             _LOGGER.debug(
-                "Sensor %s börjar lyssna på KNX-event för GA: %s, Värde: %s",
-                self.name, self._knx_group_address, self._knx_value
+                "Sensor %s börjar lyssna på %s, Triggar på: %s",
+                self.name,
+                self._source_entity,
+                self._trigger_value,
             )
-            self._remove_listener = self.hass.bus.async_listen(
-                "knx_event", self._async_handle_knx_event
+            self._remove_listener = async_track_state_change_event(
+                self.hass, [self._source_entity], self._async_handle_state_change
             )
         else:
             _LOGGER.warning(
-                "Ingen KNX gruppadress konfigurerad för %s. Kan inte lyssna på event.",
-                self.name
+                "Ingen käll-entitet konfigurerad för %s. Kan inte lyssna.", self.name
             )
 
     @callback
-    def _stop_knx_listener(self) -> None:
+    def _stop_listener(self) -> None:
         """Stoppar lyssnaren."""
         if self._remove_listener:
             self._remove_listener()
             self._remove_listener = None
-            _LOGGER.debug("KNX-lyssnare borttagen för %s.", self.name)
+            _LOGGER.debug("Lyssnare borttagen för %s.", self.name)
 
     @callback
-    async def _async_options_updated(self, hass: HomeAssistant, entry: ConfigEntry) -> None:
+    async def _async_options_updated(
+        self, hass: HomeAssistant, entry: ConfigEntry
+    ) -> None:
         """Callback när inställningar uppdateras."""
         # pylint: disable=unused-argument
         _LOGGER.debug(
             "Options uppdaterade för %s sensor, uppdaterar konfiguration och startar om lyssnare.",
-            self.name
+            self.name,
         )
 
-        old_ga = self._knx_group_address
-        old_val = self._knx_value
+        old_source = self._source_entity
+        old_trigger = self._trigger_value
 
         self._update_instance_variables_from_config()
 
-        if old_ga != self._knx_group_address or old_val != self._knx_value:
-            _LOGGER.info("KNX lyssnarparametrar ändrade för %s. Startar om lyssnaren.", self.name)
-            self._stop_knx_listener()
-            self._start_knx_listener()
+        if old_source != self._source_entity or old_trigger != self._trigger_value:
+            _LOGGER.info(
+                "Lyssnarparametrar ändrade för %s. Startar om lyssnaren.", self.name
+            )
+            self._stop_listener()
+            self._start_listener()
 
         self.async_write_ha_state()
 
     @callback
-    async def _async_handle_knx_event(self, event: Event) -> None: # pylint: disable=too-many-branches, too-many-statements, too-many-locals
-        """Hanterar ett KNX-event från eventbussen."""
-        _LOGGER.debug(
-            "Sensor '%s' mottog ett KNX-event på bussen. Event data: %s. "
-            "Konfigurerad för GA: '%s', Värde: '%s'",
-            self.name,
-            event.data,
-            self._knx_group_address,
-            self._knx_value
-        )
-
-        destination_address = event.data.get("destination")
-
-        value_from_event_value_field = event.data.get("value")
-        actual_value_from_event = value_from_event_value_field
-
-        if actual_value_from_event is None:
-            value_from_event_data_field = event.data.get("data")
-            _LOGGER.debug(
-                "Sensor '%s': 'event.data.value' var None. Faller tillbaka till 'event.data.data' (%r, typ: %s).",
-                self.name,
-                value_from_event_data_field,
-                type(value_from_event_data_field)
-            )
-            actual_value_from_event = value_from_event_data_field
-
-        if actual_value_from_event is None:
-            _LOGGER.debug(
-                "Sensor '%s': Varken 'event.data.value' eller 'event.data.data' innehöll ett användbart värde.",
-                self.name
-            )
+    async def _async_handle_state_change(self, event: Event) -> None:
+        """Hanterar en tillståndsförändring."""
+        new_state = event.data.get("new_state")
+        if new_state is None:
             return
 
         _LOGGER.debug(
-            "Sensor '%s' jämför: Mottagen Dest: %r (ska vara %r), Faktiskt Värde från Event: %r (typ: %s) (ska vara %r typ: %s)", # pylint: disable=line-too-long
+            "Sensor '%s': Tillstånd ändrat för %s: %s (önskat: %s)",
             self.name,
-            destination_address, self._knx_group_address,
-            actual_value_from_event, type(actual_value_from_event),
-            self._knx_value, type(self._knx_value)
+            self._source_entity,
+            new_state.state,
+            self._trigger_value,
         )
 
-        comparable_value = None
-        try:
-            if isinstance(actual_value_from_event, list) and len(actual_value_from_event) == 1:
-                comparable_value = int(actual_value_from_event[0])
-            else:
-                comparable_value = int(actual_value_from_event)
-        except (ValueError, TypeError) as e:
-            _LOGGER.debug(
-                "Sensor '%s': Kunde inte konvertera mottaget värde %r (typ: %s) till heltal för jämförelse: %s. Ignorerar.", # pylint: disable=line-too-long
-                self.name,
-                actual_value_from_event,
-                type(actual_value_from_event),
-                e
-            )
-            return
+        if new_state.state == self._trigger_value:
+            await self._handle_trigger(new_state.state)
 
-        if (
-            destination_address == self._knx_group_address
-            and comparable_value == self._knx_value
-        ):
-            await self._handle_match(
-                destination_address,
-                actual_value_from_event,
-                comparable_value
-            )
-        else:
-            if destination_address == self._knx_group_address:
-                _LOGGER.debug(
-                    "Sensor '%s': GA '%s' matchade, men värdet gjorde det inte. Jämförbart Värde: %r (typ: %s), Förväntat: %r (typ: %s).", # pylint: disable=line-too-long
-                    self.name,
-                    destination_address,
-                    comparable_value if comparable_value is not None else actual_value_from_event,
-                    type(comparable_value if comparable_value is not None else actual_value_from_event),
-                    self._knx_value, type(self._knx_value)
-                )
-
-    async def _handle_match(self, destination_address, actual_value_from_event, comparable_value):
-        """Hanterar en matchning av GA och värde."""
-        _LOGGER.info(
-            "MATCH! KNX-event för '%s': GA '%s', Värde '%s' (jämfört som %s). Bearbetar dubbelklicklogik...",
-            self.name,
-            destination_address,
-            actual_value_from_event,
-            comparable_value
-        )
+    async def _handle_trigger(self, trigger_value):
+        """Hanterar en trigger-händelse (t.ex. 'on')."""
         current_time_utc = dt_util.utcnow()
-        previous_event_time_utc = self._last_valid_knx_event_time_utc
+        previous_trigger_time_utc = self._last_trigger_time_utc
 
-        self._native_value = current_time_utc
-        self._last_valid_knx_event_time_utc = current_time_utc
+        self._last_trigger_time_utc = current_time_utc
         self._last_time_difference_seconds = None
 
-        if previous_event_time_utc and self._double_click_window_seconds is not None:
+        if previous_trigger_time_utc and self._double_click_window_seconds is not None:
             time_difference_seconds = (
-                current_time_utc - previous_event_time_utc
+                current_time_utc - previous_trigger_time_utc
             ).total_seconds()
             self._last_time_difference_seconds = time_difference_seconds
 
@@ -434,35 +415,61 @@ class KnxDoubleClickSensor(SensorEntity):
                     time_difference_seconds,
                 )
 
+                # Momentan aktivering
+                self._attr_is_on = True
+                self.async_write_ha_state()
+
+                # Återställ till OFF kort därefter (t.ex. 0.1s eller nästa tick)
+                # Vi använder async_call_later för att schemalägga återställningen
+                @callback
+                def reset_state(_):
+                    self._attr_is_on = False
+                    self.async_write_ha_state()
+
+                async_call_later(self.hass, 0.2, reset_state)
+
                 parsed_actions_list = await self._load_parsed_actions_from_file()
 
                 if parsed_actions_list:
                     await self._execute_actions(
                         parsed_actions_list,
-                        comparable_value,
+                        trigger_value,
                         current_time_utc,
-                        time_difference_seconds
+                        time_difference_seconds,
                     )
                 else:
                     _LOGGER.warning(
                         "Dubbelklick detekterat för %s, men inga åtgärder är konfigurerade i filen %s.",
-                        self.name, self._actions_file_path
+                        self.name,
+                        self._actions_file_path,
                     )
 
         self.async_write_ha_state()
 
-    async def _execute_actions(self, parsed_actions_list, comparable_value, current_time_utc, time_difference_seconds): # pylint: disable=too-many-nested-blocks
+    async def _execute_actions(
+        self,
+        parsed_actions_list,
+        trigger_value,
+        current_time_utc,
+        time_difference_seconds,
+    ):  # pylint: disable=too-many-nested-blocks
         """Exekverar åtgärderna."""
-        _LOGGER.debug("Agerar på %d parsade åtgärder: %s", len(parsed_actions_list), parsed_actions_list)
+        _LOGGER.debug(
+            "Agerar på %d parsade åtgärder: %s",
+            len(parsed_actions_list),
+            parsed_actions_list,
+        )
 
         all_actions_are_simple_services = True
         if not parsed_actions_list:
             all_actions_are_simple_services = False
         else:
             for action_dict_check in parsed_actions_list:
-                if not (isinstance(action_dict_check, dict) and \
-                        "service" in action_dict_check and \
-                        not any(key in action_dict_check for key in COMPLEX_ACTION_KEYS)):
+                if not (
+                    isinstance(action_dict_check, dict)
+                    and "service" in action_dict_check
+                    and not any(key in action_dict_check for key in COMPLEX_ACTION_KEYS)
+                ):
                     all_actions_are_simple_services = False
                     break
 
@@ -471,31 +478,27 @@ class KnxDoubleClickSensor(SensorEntity):
         if all_actions_are_simple_services:
             _LOGGER.info(
                 "Alla %d åtgärder är enkla serviceanrop. Försöker köra dem direkt sekventiellt.",
-                len(parsed_actions_list)
+                len(parsed_actions_list),
             )
             actions_executed_successfully_directly = True
             for i, action_dict in enumerate(parsed_actions_list):
-                if not await self._execute_single_service_action(i, action_dict, len(parsed_actions_list)):
+                if not await self._execute_single_service_action(
+                    i, action_dict, len(parsed_actions_list)
+                ):
                     actions_executed_successfully_directly = False
                     break
 
-            if actions_executed_successfully_directly:
-                _LOGGER.info(
-                    "Alla (%d) enkla serviceanrop har körts direkt för %s.",
-                    len(parsed_actions_list), self.name
-                )
-            else:
-                _LOGGER.error("Minst ett direkt serviceanrop misslyckades för %s.", self.name)
-
-        if not (all_actions_are_simple_services and actions_executed_successfully_directly):
+        if not (
+            all_actions_are_simple_services and actions_executed_successfully_directly
+        ):
             await self._execute_complex_actions(
                 parsed_actions_list,
                 all_actions_are_simple_services,
                 {
-                    "value": comparable_value,
+                    "value": trigger_value,
                     "time": current_time_utc,
-                    "diff": time_difference_seconds
-                }
+                    "diff": time_difference_seconds,
+                },
             )
 
     async def _execute_single_service_action(self, index, action_dict, total_actions):
@@ -523,65 +526,84 @@ class KnxDoubleClickSensor(SensorEntity):
             domain, service_name = service_call_str.split(".", 1)
             _LOGGER.info(
                 "Utför direkt serviceanrop %d/%d för %s: Domän=%s, Tjänst=%s, Data=%s, Target=%s",
-                index + 1, total_actions, self.name, domain, service_name, service_data, final_target
+                index + 1,
+                total_actions,
+                self.name,
+                domain,
+                service_name,
+                service_data,
+                final_target,
             )
             await self.hass.services.async_call(
-                domain, service_name, service_data,
-                blocking=True, context=Context(), target=final_target
+                domain,
+                service_name,
+                service_data,
+                blocking=True,
+                context=Context(),
+                target=final_target,
             )
-            _LOGGER.info("Direkt serviceanrop %d/%d för %s lyckades.", index + 1, total_actions, self.name)
             return True
         except Exception as e:
             _LOGGER.error(
                 "Fel vid direkt serviceanrop %d/%d för %s: %s. Åtgärd: %s",
-                index + 1, total_actions, self.name, e, action_dict, exc_info=True
+                index + 1,
+                total_actions,
+                self.name,
+                e,
+                action_dict,
+                exc_info=True,
             )
             return False
 
     async def _execute_complex_actions(
-        self,
-        parsed_actions_list,
-        all_actions_are_simple_services,
-        context_data
+        self, parsed_actions_list, all_actions_are_simple_services, context_data
     ):
         """Kör komplexa åtgärder via Script-hjälparen."""
         # pylint: disable=broad-exception-caught
         if not all_actions_are_simple_services:
-            _LOGGER.info("Åtgärdslistan innehåller komplexa åtgärder, använder Script-hjälparen för %s.", self.name)
+            _LOGGER.info(
+                "Åtgärdslistan innehåller komplexa åtgärder, använder Script-hjälparen för %s.",
+                self.name,
+            )
         else:
             _LOGGER.warning(
                 "Direkta serviceanrop misslyckades för %s, försöker ändå med Script-hjälparen.",
-                self.name
+                self.name,
             )
 
         script_runner = self._compile_script_from_parsed_actions(parsed_actions_list)
         if script_runner:
             script_context = Context()
-            name_suffix = self.config_entry.data.get(CONF_NAME_SUFFIX, DEFAULT_NAME_SUFFIX)
+            name_suffix = self.config_entry.data.get(
+                CONF_NAME_SUFFIX, DEFAULT_NAME_SUFFIX
+            )
             template_variables = {
                 "trigger": {
-                    "platform": "knx_doubleclick",
+                    "platform": "smart_doubleclick",
                     "name": name_suffix,
-                    "group_address": self._knx_group_address,
+                    "source_entity": self._source_entity,
                     "value": context_data["value"],
                     "event_time_utc": context_data["time"].isoformat(),
-                    "event_time_local": dt_util.as_local(context_data["time"]).isoformat(),
-                    "time_difference_seconds": context_data["diff"]
+                    "event_time_local": dt_util.as_local(
+                        context_data["time"]
+                    ).isoformat(),
+                    "time_difference_seconds": context_data["diff"],
                 },
                 "config_entry_name": self.config_entry.title,
-                "actions_file": self._actions_file_path
+                "actions_file": self._actions_file_path,
             }
-            _LOGGER.debug("Kör skript via Script-hjälparen med variabler: %s", template_variables)
             try:
                 await script_runner.async_run(
-                    run_variables=template_variables,
-                    context=script_context
+                    run_variables=template_variables, context=script_context
                 )
             except Exception as e:
-                print(f"DEBUG: Exception in async_run: {e}") # DEBUG
-                _LOGGER.error("Fel vid körning av Script-hjälparen för %s: %s", self.name, e, exc_info=True)
+                _LOGGER.error(
+                    "Fel vid körning av Script-hjälparen för %s: %s",
+                    self.name,
+                    e,
+                    exc_info=True,
+                )
         else:
             _LOGGER.warning(
-                "Kunde inte kompilera skript för %s via Script-hjälparen (parsed_actions: %s).",
-                self.name, parsed_actions_list
+                "Kunde inte kompilera skript för %s via Script-hjälparen.", self.name
             )

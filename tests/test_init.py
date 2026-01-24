@@ -2,6 +2,7 @@
 Grundläggande tester för att verifiera att komponenten kan laddas.
 Detta fungerar som ett "smoke test" för testmiljön.
 """
+
 from custom_components.knx_doubleclick.const import DOMAIN
 
 

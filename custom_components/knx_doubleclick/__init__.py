@@ -17,9 +17,12 @@ from .const import ACTIONS_DIR_BASENAME, DOMAIN, PLATFORMS
 
 _LOGGER = logging.getLogger(__name__)
 
+
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Sätter upp KNX Dubbelklicksdetektor från en config entry."""
-    _LOGGER.info("Sätter upp config entry för KNX Dubbelklicksdetektor: %s", entry.title)
+    _LOGGER.info(
+        "Sätter upp config entry för KNX Dubbelklicksdetektor: %s", entry.title
+    )
 
     # Säkerställ att katalogen för åtgärdsfiler existerar
     actions_dir_path = hass.config.path(ACTIONS_DIR_BASENAME)
@@ -27,9 +30,13 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         try:
             _LOGGER.info("Skapar katalog för åtgärdsfiler: %s", actions_dir_path)
             # ANVÄND PARTIAL HÄR: async_add_executor_job stöder inte kwargs direkt
-            await hass.async_add_executor_job(partial(os.makedirs, actions_dir_path, exist_ok=True))
+            await hass.async_add_executor_job(
+                partial(os.makedirs, actions_dir_path, exist_ok=True)
+            )
         except Exception as e:
-            _LOGGER.error("Kunde inte skapa katalog för åtgärdsfiler %s: %s", actions_dir_path, e)
+            _LOGGER.error(
+                "Kunde inte skapa katalog för åtgärdsfiler %s: %s", actions_dir_path, e
+            )
             return False
 
     hass.data.setdefault(DOMAIN, {})[entry.entry_id] = entry.data
@@ -57,7 +64,10 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
 
     return unload_ok
 
-async def async_update_options_listener(hass: HomeAssistant, entry: ConfigEntry) -> None:
+
+async def async_update_options_listener(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> None:
     """Hanterar uppdateringar av options för config entry."""
     _LOGGER.info("Optioner uppdaterade för %s, laddar om integrationen.", entry.title)
     await hass.config_entries.async_reload(entry.entry_id)

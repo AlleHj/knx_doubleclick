@@ -1,14 +1,21 @@
 """
-Tester för Config Flow i KNX Dubbelklicksdetektor.
+Tester för Config Flow i Smart Dubbelklicksdetektor.
 """
+
 from unittest.mock import MagicMock, mock_open, patch
 
 import pytest
 from homeassistant import config_entries, data_entry_flow
 
-from custom_components.knx_doubleclick.config_flow import KnxDoubleClickOptionsFlowHandler
+from custom_components.knx_doubleclick.config_flow import (
+    KnxDoubleClickOptionsFlowHandler,
+)
 from custom_components.knx_doubleclick.const import (
     CONF_YAML_CONTENT,
+    CONF_SOURCE_ENTITY,
+    CONF_TRIGGER_VALUE,
+    CONF_NAME_SUFFIX,
+    CONF_DOUBLE_CLICK_WINDOW_SECONDS,
     DOMAIN,
     ERROR_INVALID_YAML,
 )
@@ -22,10 +29,10 @@ def mock_config_entry(mock_hass):
     entry.domain = DOMAIN
     entry.title = "Test Knapp"
     entry.data = {
-        "name_suffix": "Test",
-        "knx_group_address": "1/1/1",
-        "knx_value": 1,
-        "double_click_window_seconds": 0.5
+        CONF_NAME_SUFFIX: "Test",
+        CONF_SOURCE_ENTITY: "input_boolean.test",
+        CONF_TRIGGER_VALUE: "on",
+        CONF_DOUBLE_CLICK_WINDOW_SECONDS: 0.5,
     }
     entry.options = {}
 
@@ -34,6 +41,7 @@ def mock_config_entry(mock_hass):
     # Nödvändigt för OptionsFlow i nyare HA versioner
     mock_hass.config_entries.async_get_known_entry.return_value = entry
     return entry
+
 
 @pytest.mark.asyncio
 async def test_options_flow_init_menu(mock_hass, mock_config_entry):
@@ -86,9 +94,10 @@ async def test_options_flow_edit_yaml_load(mock_hass, mock_config_entry):
 
     mock_hass.async_add_executor_job = mock_async_add_executor_job
 
-    with patch("os.path.exists", return_value=True), \
-         patch("builtins.open", mock_open(read_data=file_content)):
-
+    with (
+        patch("os.path.exists", return_value=True),
+        patch("builtins.open", mock_open(read_data=file_content)),
+    ):
         result = await flow.async_step_edit_yaml()
 
     assert result["type"] == data_entry_flow.FlowResultType.FORM
@@ -106,20 +115,21 @@ async def test_options_flow_edit_yaml_save_valid(mock_hass, mock_config_entry):
     """
 
     flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
-    flow = KnxDoubleClickOptionsFlowHandler(mock_config_entry)
     flow.hass = mock_hass
     flow.handler = mock_config_entry.entry_id
 
     # Mocka executor
     async def mock_async_add_executor_job(func, *args, **kwargs):
         return func(*args, **kwargs)
+
     mock_hass.async_add_executor_job = mock_async_add_executor_job
 
     user_input = {CONF_YAML_CONTENT: "key: value"}
 
-    with patch("os.replace") as mock_replace, \
-         patch("builtins.open", mock_open()) as mock_file:
-
+    with (
+        patch("os.replace") as mock_replace,
+        patch("builtins.open", mock_open()) as mock_file,
+    ):
         result = await flow.async_step_edit_yaml(user_input)
 
         # Verifiera att filen skrevs

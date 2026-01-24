@@ -2,6 +2,7 @@
 Konfiguration för pytest-fixturer.
 Denna fil innehåller fixturer som används av testerna för att mocka Home Assistant-funktioner.
 """
+
 from unittest.mock import MagicMock
 
 import pytest

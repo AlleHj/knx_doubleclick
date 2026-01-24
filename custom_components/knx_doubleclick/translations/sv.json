@@ -2,19 +2,19 @@
   "config": {
     "step": {
       "user": {
-        "title": "KNX Dubbelklicksdetektor: Ny Lyssnare",
-        "description": "Konfigurera en ny lyssnare för KNX dubbelklick. Ett unikt namnsuffix hjälper dig att identifiera denna instans och dess entiteter. Åtgärder konfigureras i en separat YAML-fil som skapas automatiskt i mappen 'config/knx_doubleclick_actions/'.",
+        "title": "Smart Dubbelklick: Ny Lyssnare",
+        "description": "Konfigurera en ny lyssnare för dubbelklick. Välj en entitet att övervaka och vilket tillstånd som ska trigga detekteringen.",
         "data": {
-          "name_suffix": "Namn (t.ex. 'Vardagsrum Tak', blir del av entitets-ID)",
-          "knx_group_address": "KNX Gruppadress att lyssna på (t.ex. 1/1/1)",
-          "knx_value": "KNX Värde att reagera på (t.ex. 1 för påslag)",
-          "double_click_window_seconds": "Tidsfönster för dubbelklick (t.ex. 0.7 i sekunder)"
+          "name_suffix": "Namn (t.ex. 'Vardagsrum Tak')",
+          "source_entity": "Käll-entitet att lyssna på",
+          "trigger_value": "Värde att trigga på (t.ex. 'on' eller 'off')",
+          "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)"
         }
       }
     },
     "error": {
       "unknown": "Oväntat fel inträffade.",
-      "name_suffix_already_configured": "En instans med detta namnsuffix är redan konfigurerad. Välj ett unikt suffix."
+      "name_suffix_already_configured": "En instans med detta namn är redan konfigurerad."
     },
     "abort": {
       "already_configured": "En enhet med denna unika identifierare är redan konfigurerad."
@@ -30,26 +30,26 @@
         "description": "Välj vad du vill göra för '{config_entry_name}'"
       },
       "basic_options": {
-        "title": "KNX Dubbelklicksdetektor: Grundläggande",
-        "description": "Justera de grundläggande inställningarna för '{config_entry_name}'.\nFil: `{actions_file_path}`",
+        "title": "Smart Dubbelklick: Grundläggande",
+        "description": "Justera inställningarna för '{config_entry_name}'.",
         "data": {
-          "knx_group_address": "KNX Gruppadress att lyssna på",
-          "knx_value": "KNX Värde att reagera på",
+          "source_entity": "Käll-entitet att lyssna på",
+          "trigger_value": "Värde att trigga på",
           "double_click_window_seconds": "Tidsfönster för dubbelklick (sekunder)"
         }
       },
       "edit_yaml": {
           "title": "Redigera YAML Åtgärder",
-          "description": "Här kan du redigera åtgärderna direkt.\nFil: `{actions_file_path}`",
+          "description": "Redigera åtgärderna som ska utföras vid dubbelklick.\nFil: `{actions_file_path}`",
           "data": {
               "yaml_content": "YAML Innehåll"
           }
       }
     },
     "error": {
-        "unknown_option_error": "Ett okänt fel uppstod vid hantering av optioner.",
-        "invalid_yaml": "Ogiltig YAML-syntax. Kontrollera din kod.",
-        "cannot_write_actions_file": "Kunde inte spara filen. Kontrollera behörigheter.",
+        "unknown_option_error": "Ett okänt fel uppstod.",
+        "invalid_yaml": "Ogiltig YAML-syntax.",
+        "cannot_write_actions_file": "Kunde inte spara filen.",
         "cannot_read_actions_file": "Kunde inte läsa filen."
     }
   }
