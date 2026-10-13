@@ -1,3 +1,4 @@
+# Version: 2026-10-13 - Moderniserade typannoteringar och felhantering för Ruff
 # knx_doubleclick/config_flow.py
 # Version: 0.8.20
 # Datum: 2026-01-15
@@ -8,7 +9,7 @@
 
 import logging
 import os
-from typing import Any, Dict, Optional
+from typing import Any
 
 import voluptuous as vol
 import yaml
@@ -58,9 +59,9 @@ class KnxDoubleClickConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return KnxDoubleClickOptionsFlowHandler(config_entry)
 
     async def async_step_user(
-        self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> config_entries.FlowResult:
-        errors: Dict[str, str] = {}
+        errors: dict[str, str] = {}
 
         if user_input is not None:
             name_suffix = user_input.get(CONF_NAME_SUFFIX, "").strip()
@@ -110,7 +111,7 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
         self._config_entry = config_entry
 
     async def async_step_init(
-        self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> config_entries.FlowResult:
         """
         Startsteget för options.
@@ -131,10 +132,10 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
         )
 
     async def async_step_basic_options(
-        self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> config_entries.FlowResult:
         """Redigera grundläggande parametrar."""
-        errors: Dict[str, str] = {}
+        errors: dict[str, str] = {}
 
         if user_input is not None:
             # Spara inställningarna och återgå till menyn? Eller avsluta?
@@ -184,13 +185,13 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
         )
 
     async def async_step_edit_yaml(
-        self, user_input: Optional[Dict[str, Any]] = None
+        self, user_input: dict[str, Any] | None = None
     ) -> config_entries.FlowResult:
         """
         Steg för att redigera YAML-filen direkt.
         Laddar filen, visar den i en TemplateSelector (kod-editor), validerar och sparar.
         """
-        errors: Dict[str, str] = {}
+        errors: dict[str, str] = {}
         actions_file_path = _config_flow_get_actions_file_path(self.hass, self.config_entry)
 
         # Om användaren har skickat in formuläret (spara)
@@ -222,7 +223,7 @@ class KnxDoubleClickOptionsFlowHandler(config_entries.OptionsFlow):
                 errors["base"] = ERROR_INVALID_YAML
             except OSError:
                 errors["base"] = ERROR_CANNOT_WRITE_ACTIONS_FILE
-            except Exception: # pylint: disable=broad-exception-caught
+            except Exception:
                 _LOGGER.exception("Oväntat fel vid sparande av YAML")
                 errors["base"] = "unknown"
 

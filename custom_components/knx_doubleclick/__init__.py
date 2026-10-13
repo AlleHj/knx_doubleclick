@@ -1,3 +1,4 @@
+# Version: 2026-10-13 - Rättat BLE001 vid kataloghantering med noqa-suppression
 # Versionshistorik:
 # Version: 0.8.17
 # Datum: 2026-01-01
@@ -28,7 +29,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
             _LOGGER.info("Skapar katalog för åtgärdsfiler: %s", actions_dir_path)
             # ANVÄND PARTIAL HÄR: async_add_executor_job stöder inte kwargs direkt
             await hass.async_add_executor_job(partial(os.makedirs, actions_dir_path, exist_ok=True))
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.error("Kunde inte skapa katalog för åtgärdsfiler %s: %s", actions_dir_path, e)
             return False
 

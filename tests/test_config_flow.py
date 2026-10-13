@@ -6,7 +6,9 @@ from unittest.mock import MagicMock, mock_open, patch
 import pytest
 from homeassistant import config_entries, data_entry_flow
 
-from custom_components.knx_doubleclick.config_flow import KnxDoubleClickOptionsFlowHandler
+from custom_components.knx_doubleclick.config_flow import (
+    KnxDoubleClickOptionsFlowHandler,
+)
 from custom_components.knx_doubleclick.const import (
     CONF_YAML_CONTENT,
     DOMAIN,
