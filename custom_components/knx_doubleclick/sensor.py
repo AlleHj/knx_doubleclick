@@ -1,3 +1,4 @@
+# Version: 2026-10-13 - Rättat G201 (logger.exception), BLE001, I001 och UP-typannoteringar
 # Versionshistorik:
 # Version: 0.8.21
 # Datum: 2026-01-15
@@ -10,8 +11,9 @@
 import datetime
 import logging
 import os
-from typing import Any, Dict, List, Optional
+from typing import Any
 
+import homeassistant.helpers.config_validation as cv
 import homeassistant.util.dt as dt_util
 import yaml
 from homeassistant.components.sensor import SensorDeviceClass, SensorEntity
@@ -19,7 +21,6 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import Context, Event, HomeAssistant, callback
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.script import SCRIPT_MODE_SINGLE, Script
-import homeassistant.helpers.config_validation as cv
 from homeassistant.util import slugify
 
 from .const import (
@@ -95,7 +96,7 @@ async def async_setup_entry(
                 with open(actions_file_path, "w", encoding="utf-8") as f:
                     f.write(full_content_for_new_file)
             await hass.async_add_executor_job(write_default_file_with_header)
-        except Exception as e: # pylint: disable=broad-exception-caught
+        except Exception as e:  # noqa: BLE001 # pylint: disable=broad-exception-caught
             _LOGGER.error("Kunde inte skapa standard åtgärdsfil %s: %s", actions_file_path, e)
 
     name_suffix = config_entry.data.get(CONF_NAME_SUFFIX, DEFAULT_NAME_SUFFIX)
@@ -120,16 +121,16 @@ class KnxDoubleClickSensor(SensorEntity):
         self._attr_unique_id = f"{config_entry.entry_id}_sensor"
         self._attr_should_poll = False
 
-        self._last_valid_knx_event_time_utc: Optional[datetime.datetime] = None
-        self._native_value: Optional[datetime.datetime] = None
-        self._remove_listener: Optional[callable] = None
+        self._last_valid_knx_event_time_utc: datetime.datetime | None = None
+        self._native_value: datetime.datetime | None = None
+        self._remove_listener: callable | None = None
 
-        self._knx_group_address: Optional[str] = None
-        self._knx_value: Optional[int] = None
-        self._double_click_window_seconds: Optional[float] = None
+        self._knx_group_address: str | None = None
+        self._knx_value: int | None = None
+        self._double_click_window_seconds: float | None = None
 
         self._actions_file_path = _get_actions_file_path_for_sensor_instance(hass, config_entry)
-        self._last_time_difference_seconds: Optional[float] = None
+        self._last_time_difference_seconds: float | None = None
 
         self._update_instance_variables_from_config()
 
@@ -148,12 +149,12 @@ class KnxDoubleClickSensor(SensorEntity):
         return self._name
 
     @property
-    def native_value(self) -> Optional[datetime.datetime]:
+    def native_value(self) -> datetime.datetime | None:
         """Returnerar sensorns värde (tidsstämpel för senaste klick)."""
         return self._native_value
 
     @property
-    def extra_state_attributes(self) -> Dict[str, Any]:
+    def extra_state_attributes(self) -> dict[str, Any]:
         """Returnerar extra attribut."""
         attrs = {
             ATTR_KNX_GROUP_ADDRESS: self._knx_group_address,
@@ -182,11 +183,11 @@ class KnxDoubleClickSensor(SensorEntity):
 
         _LOGGER.debug("Sensor %s instansvariabler uppdaterade från konfiguration.", self.name)
 
-    async def _load_parsed_actions_from_file(self) -> Optional[List[Dict[str, Any]]]:
+    async def _load_parsed_actions_from_file(self) -> list[dict[str, Any]] | None:
         """Laddar och parsar åtgärder från YAML-filen."""
         # pylint: disable=broad-exception-caught
         # pylint: disable=too-many-return-statements
-        actions_yaml_str: Optional[str] = None
+        actions_yaml_str: str | None = None
         if not await self.hass.async_add_executor_job(os.path.exists, self._actions_file_path):
             _LOGGER.warning("Åtgärdsfilen %s för %s hittades inte.", self._actions_file_path, self.name)
             return None
@@ -195,7 +196,7 @@ class KnxDoubleClickSensor(SensorEntity):
                 with open(self._actions_file_path, "r", encoding="utf-8") as f:
                     return f.read()
             actions_yaml_str = await self.hass.async_add_executor_job(read_file_content)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             _LOGGER.error(
                 "Kunde inte läsa åtgärdsfil %s för %s: %s",
                 self._actions_file_path, self.name, e
@@ -228,7 +229,7 @@ class KnxDoubleClickSensor(SensorEntity):
             _LOGGER.error("Ogiltig YAML i åtgärdsfil %s för %s: %s", self._actions_file_path, self.name, e)
         return None
 
-    def _compile_script_from_parsed_actions(self, parsed_actions: List[Dict[str, Any]]) -> Optional[Script]:
+    def _compile_script_from_parsed_actions(self, parsed_actions: list[dict[str, Any]]) -> Script | None:
         """Kompilerar åtgärder till ett Script-objekt."""
         if not parsed_actions:
             return None
@@ -248,11 +249,11 @@ class KnxDoubleClickSensor(SensorEntity):
             )
             _LOGGER.debug("Åtgärder kompilerade för %s. Antal åtgärder: %d", self.name, len(parsed_actions))
             return script_runner
-        except Exception as e: # pylint: disable=broad-exception-caught
+        except Exception as e:  # pylint: disable=broad-exception-caught
             print(f"DEBUG: Exception in compile script: {e}") # DEBUG
-            _LOGGER.error(
-                "Oväntat fel vid kompilering av skript för %s från parsade åtgärder: %s",
-                self.name, e, exc_info=True
+            _LOGGER.exception(
+                "Oväntat fel vid kompilering av skript för %s från parsade åtgärder",
+                self.name
             )
         return None
 
@@ -531,10 +532,10 @@ class KnxDoubleClickSensor(SensorEntity):
             )
             _LOGGER.info("Direkt serviceanrop %d/%d för %s lyckades.", index + 1, total_actions, self.name)
             return True
-        except Exception as e:
-            _LOGGER.error(
-                "Fel vid direkt serviceanrop %d/%d för %s: %s. Åtgärd: %s",
-                index + 1, total_actions, self.name, e, action_dict, exc_info=True
+        except Exception:
+            _LOGGER.exception(
+                "Fel vid direkt serviceanrop %d/%d för %s. Åtgärd: %s",
+                index + 1, total_actions, self.name, action_dict
             )
             return False
 
@@ -579,7 +580,7 @@ class KnxDoubleClickSensor(SensorEntity):
                 )
             except Exception as e:
                 print(f"DEBUG: Exception in async_run: {e}") # DEBUG
-                _LOGGER.error("Fel vid körning av Script-hjälparen för %s: %s", self.name, e, exc_info=True)
+                _LOGGER.exception("Fel vid körning av Script-hjälparen för %s", self.name)
         else:
             _LOGGER.warning(
                 "Kunde inte kompilera skript för %s via Script-hjälparen (parsed_actions: %s).",

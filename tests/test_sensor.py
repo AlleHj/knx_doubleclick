@@ -2,18 +2,19 @@
 Tester för Sensor-logik i KNX Dubbelklicksdetektor.
 """
 from datetime import timedelta
-from unittest.mock import MagicMock, patch, AsyncMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 from homeassistant.util import dt as dt_util
 
-from custom_components.knx_doubleclick.sensor import KnxDoubleClickSensor
 from custom_components.knx_doubleclick.const import (
+    CONF_DOUBLE_CLICK_WINDOW_SECONDS,
     CONF_KNX_GROUP_ADDRESS,
     CONF_KNX_VALUE,
-    CONF_DOUBLE_CLICK_WINDOW_SECONDS,
-    CONF_NAME_SUFFIX
+    CONF_NAME_SUFFIX,
 )
+from custom_components.knx_doubleclick.sensor import KnxDoubleClickSensor
+
 
 # Fixtur för mockad config entry
 @pytest.fixture
@@ -152,6 +153,5 @@ async def test_repeat_loop_with_service_call_crash(mock_hass, mock_config_entry)
         # Det viktigaste här är att vi fixade 'KeyError: service_template' (kraschen).
         # Så vi assertar att vi inte kraschade (vilket vi redan vet om vi kom hit)
         # och att valideringen skedde.
-        pass
     else:
         mock_hass.services.async_call.assert_called()
