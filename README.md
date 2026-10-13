@@ -1,6 +1,6 @@
 # KNX Dubbelklicksdetektor
 
-![Version](https://img.shields.io/badge/version-1.2.2-blue.svg)
+![Version](https://img.shields.io/badge/version-1.3.0-blue.svg)
 ![Home Assistant](https://img.shields.io/badge/Home%20Assistant-Custom%20Component-orange.svg)
 ![Type](https://img.shields.io/badge/type-sensor-green.svg)
 ![Maintainer](https://img.shields.io/badge/maintainer-AlleHj-lightgrey.svg)
